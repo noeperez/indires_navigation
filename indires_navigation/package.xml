@@ -1,0 +1,21 @@
+<package>
+  <name>indires_navigation</name>
+  <version>1.0.0</version>
+  <description>A metapackage which contains the packages of the robots 3D navigation system of the INDIRES project</description>
+  <maintainer email="noe.perez@uc3m.es">Noé Pérez</maintainer>
+  <license>BSD</license>
+ 
+  <url>http://indires.eu/</url>
+
+  <author email="noe.perez@uc3m.es">Noé Pérez</author>
+  
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <run_depend>ros_base</run_depend>
+  <run_depend>robot_state_publisher</run_depend>
+  <run_depend>xacro</run_depend>
+
+  <export>
+    <metapackage/>
+  </export>
+</package>

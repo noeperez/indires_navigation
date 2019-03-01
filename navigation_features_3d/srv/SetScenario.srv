@@ -1,0 +1,5 @@
+sensor_msgs/PointCloud2 obstacles
+upo_msgs/PersonPoseArrayUPO people
+geometry_msgs/PoseStamped goal
+---
+

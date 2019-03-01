@@ -1,0 +1,40 @@
+
+
+StatisticalOutlierFilter:
+  enable: false
+  mean_k_neighbors: 20 #50
+  std_dev: 5.0 #1.0
+
+
+PassThroughFilter:
+  enable: false
+  center_x: 0.0
+  center_y: 0.0
+  center_z: 0.0
+  rad_x: 1.0
+  rad_y: 1.0
+  rad_z: 1.0 
+
+
+CropBoxFilter:
+  enable: true
+  cb_min_x: -1.5
+  cb_min_y: -1.5
+  cb_min_z: -1.5
+  cb_max_x: 1.5
+  cb_max_y: 1.5
+  cb_max_z: 1.5
+
+
+VoxelGridFilter:
+  enable: false
+  leaf_size: 0.10
+  min_point_per_voxel: 4
+
+
+VoxelGridCovarianceFilter:
+  enable: true
+  leaf_size: 0.15
+  min_point_per_voxel: 4 
+
+

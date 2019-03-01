@@ -1,0 +1,52 @@
+<package>
+    <name>rrt_planners</name>
+    <version>1.0.0</version>
+    <description>
+
+        A library with some implementations of RRT planners.
+
+    </description>
+    <author>Noé Pérez-Higueras</author>
+    <maintainer email="noe.perez@uc3m.es">Noé Pérez</maintainer>
+    <license>BSD</license>
+    <url>https://github.com/robotics-upo</url>
+
+    <buildtool_depend>catkin</buildtool_depend>
+
+	<build_depend>angles</build_depend>
+    <build_depend>cmake_modules</build_depend>
+    <!--build_depend>costmap_2d</build_depend-->
+    <build_depend>geometry_msgs</build_depend>
+    <build_depend>nav_msgs</build_depend>
+	<build_depend>rosconsole</build_depend>
+    <build_depend>roscpp</build_depend>
+    <build_depend>std_msgs</build_depend>
+    <build_depend>tf</build_depend>
+	<!--build_depend>pcl_conversions</build_depend>
+    <build_depend>pcl_ros</build_depend-->
+    <build_depend>visualization_msgs</build_depend>
+  	<!--build_depend>upo_msgs</build_depend-->
+	<build_depend>navigation_features_3d</build_depend>
+	<!--build_depend>gmm_sampling</build_depend-->
+	<!--build_depend>dynamic_reconfigure</build_depend-->
+	<build_depend>message_generation</build_depend>
+
+	<run_depend>angles</run_depend>
+	<run_depend>cmake_modules</run_depend>
+    <!--run_depend>costmap_2d</run_depend-->
+    <run_depend>geometry_msgs</run_depend>
+    <run_depend>nav_msgs</run_depend>
+	<run_depend>rosconsole</run_depend>
+    <run_depend>roscpp</run_depend>
+    <run_depend>std_msgs</run_depend>
+    <run_depend>tf</run_depend>
+	<!--run_depend>pcl_conversions</run_depend>
+    <run_depend>pcl_ros</run_depend-->
+    <run_depend>visualization_msgs</run_depend>
+  	<!--run_depend>upo_msgs</run_depend-->
+	<run_depend>navigation_features_3d</run_depend>
+	<!--run_depend>gmm_sampling</run_depend-->
+	<!--run_depend>dynamic_reconfigure</run_depend-->
+	<run_depend>message_runtime</run_depend>
+
+</package>

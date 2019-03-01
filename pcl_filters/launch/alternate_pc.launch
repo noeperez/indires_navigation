@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+
+<launch>
+
+    <arg name="prefix" default="indires_rover"/>
+
+	<node name="alternate_pc_node" pkg="pcl_filters" type="alternate_pc_node" output="screen">
+
+		<param name="in_pc_topic_1" value="$(arg prefix)/front_rgbd_camera/depth/points" />
+		<param name="in_pc_topic_2" value="$(arg prefix)/above_rgbd_camera/depth/points" />
+		<!--param name="main_sensor_frame" value="$(arg prefix)/above_rgbd_camera/depth/points" /-->
+		
+		<param name="output_topic" value="$(arg prefix)/alterned_point_cloud" />
+
+	</node>
+
+</launch>

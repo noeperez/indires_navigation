@@ -1,0 +1,13 @@
+<!-- -->
+<launch>
+
+	<!-- launch-prefix="xterm -e gdb (doble hyphen)args"-->
+	 <node pkg="pcl_filters" type="pc2_to_ply" name="pc2_to_ply" output="screen" >
+
+		<param name="pointcloud_topic" value="point_map" /> <!-- "indires_rover/front_rgbd_camera/front_rgbd_camera/depth/points" -->
+		<param name="output_file" value="/home/indires/Escritorio/map_fne.ply" />
+
+	</node>
+
+</launch>
+

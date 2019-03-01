@@ -1,0 +1,4 @@
+geometry_msgs/PoseStamped[] demo_path
+bool use_loss_func
+---
+

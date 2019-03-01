@@ -1,0 +1,5 @@
+geometry_msgs/PoseStamped goal
+nav_msgs/OccupancyGrid costmap
+---
+bool ok
+geometry_msgs/PoseStamped[] path

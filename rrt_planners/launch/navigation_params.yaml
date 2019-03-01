@@ -1,0 +1,237 @@
+#-----GENERAL PARAMS FOR UPO_NAVIGATION -------------------------
+#base_global_planner: navfn/NavfnROS
+#base_local_planner: upo_local_planner/UpoPlannerROS
+
+#recovery_behaviors: [{
+#    name: conservative_reset, 
+#    type: clear_costmap_recovery/ClearCostmapRecovery
+#  }, {
+#    name: aggressive_reset,
+#    type: clear_costmap_recovery/ClearCostmapRecovery
+#  }, {
+#    name: rotate_recovery1,
+#    type: rotate_recovery/RotateRecovery
+#  }, {
+#    name: rotate_recovery2,
+#    type: rotate_recovery/RotateRecovery
+#  }]
+#planner_frequency:          0 #5 #def:0
+#controller_frequency:       15.0
+#planner_patience:           15.0
+#controller_patience:        10.0
+#conservative_reset_dist:    4.0
+#recovery_behavior_enabled:  true
+#clearing_rotation_allowed:  false
+#shutdown_costmaps:          false
+#oscillation_timeout:        0.0
+#oscillation_distance:       0.5
+
+# freq of the of the rrt loop in the thread
+#thread_sleep_msecs:         100
+
+
+
+#------ GLOBAL PLANNER PARAMS -------------------------------------
+# http://www.ros.org/wiki/navfn
+#NavfnROS:
+
+#  allow_unknown:                      false
+#  planner_window_x:                   0.0
+#  planner_window_y:                   0.0
+#  default_tolerance:                  0.05
+#  visualize_potential:                true  
+#  planner_costmap_publish_frequency:  1.0
+#  use_dijkstra:                       false 
+#  old_navfn_behavior:                 false
+
+
+
+
+
+#---- RRT PLANNER PARAMS ------------------------------------
+RRT_ros_wrapper:
+
+  # RRT planner to use
+  # 1 -> RRT (no kinodynamics)
+  # 2 -> RRTstar (no kinodynamics)
+  # 3 -> Kinodynamic RRT
+  # 4 -> Kinodynamic RRTstar 
+  # 5 -> Kinodynamic simplified RRTstar
+  rrt_planner_type:           2 
+  rrt_solve_time:             5.5 
+  rrt_goal_bias:              0.07 #0.06 #0.05 
+  rrt_max_insertion_dist:     0.25 0.60<-3 0.25<-2  0.50 o 1.0<-4
+  rrt_goal_xyz_tol:           0.15 #0.12
+  rrt_goal_th_tol:            0.12
+  # If we want to interpolate the resulting path
+  # if we don't. This value should be 0 or below 0.
+  rrt_interpolate_path_dist:  0.1
+
+  # path smoothing
+  path_smoothing:             true
+  smoothing_samples:          5
+
+  #if the planner is RRT* 
+  rrtstar_use_k_nearest:      false
+  
+  # use a downsampled point cloud without ceiling and walls
+  use_external_pc_as_samples: true
+  pc_topic:                   pcl_filters_node_1/rrt_pointcloud_samples  #pcl_filters_node_2/features_pointcloud
+  
+
+  robot_base_frame:           indires_rover/base_link
+  robot_odom_frame:           indires_rover/odom
+  robot_pc_sensor_frame:      indires_rover/front_rgbd_camera/depth_optical_frame
+
+
+  #if the planner is kinodynamic (options 3 and 4)
+  kino_time_step:             0.20 #0.15 
+  kino_min_control_steps:     5  #not used currently
+  kino_max_control_steps:     10 #3    
+  kino_linear_acc:            1.0
+  kino_angular_acc:           1.0
+  # 1-> POSQ
+  # 2-> i-POSQ
+  kino_steering_type:         2
+  # Steering parameters
+  kino_steer_kp:              0.5 #0.4  #max_lin_vel
+  kino_steer_kv:              3.0
+  kino_steer_ka:              2.0  #max_ang_vel*4
+  kino_steer_ko:              0.25 #ka/8.0
+
+  # State Space
+  # dim=2-> x, y
+  # dim=3-> x, y, yaw
+  rrt_dimensions:             3
+  # if dimensions = 3
+  # type 1 - x, y, th
+  # type 2 - x, y, z
+  dimensions_type:            2
+
+  # 1-> dist (no sqrt)
+  # 2-> euclidean dist
+  # 3-> dist+quaternions_diff
+  # 4-> custom (dist+alpha)
+  # 5-> custom (w1*dist+w2*(alpha+beta))
+  # 6-> distanceFunction Park's paper IROS'15
+  distance_type:              1  
+
+  # 1-> avg_cost
+  # 2-> avg_cost * euclidean_dist
+  # 3-> avg_cost * exp(euc_dist)
+  # 4-> cost sum
+  # 5-> avg_cost * (dist+alpha)
+  # For 3 dimensions:
+  # 6-> avg_cost * (dist+sum of angles regarding the intersection line)
+  # 7-> avg_cost * distanceFunction of Park's paper IROS'15
+  motion_cost_type:           2
+
+  rrt_size_x:                 5.0
+  rrt_size_y:                 5.0
+  rrt_size_z:                 5.0
+  rrt_xyz_resolution:         0.1 #0.05
+  rrt_yaw_resolution:         0.02
+  rrt_min_linear_vel:         0.0
+  rrt_max_linear_vel:         0.5 #0.4
+  rrt_max_angular_vel:        1.0 #0.8
+  rrt_lin_vel_resolution:     0.05
+  rrt_ang_vel_resolution:     0.1
+  rrt_nn_type:                1
+
+  # Visualization
+  visualize_rrt_tree:         true
+  visualize_nav_costmap:      false
+  show_rrt_statistics:        true
+  show_intermediate_states:   false #use only in case of kino
+
+  robot_radius:               0.40  #meters
+
+
+
+#---- PARAMS FOR FEATURES CALCULATION-------------------------
+navigation_features_3d:
+
+  pointcloud_topic:           pcl_filters_node_2/features_pointcloud #point_map #indires_rover/front_rgbd_camera/front_rgbd_camera/depth/points #pcl_filters_node/PointCloud_filtered 
+  robot_circuns_radius:       0.40
+  max_pitch_inclination:      0.8  #0.79 rad = 45º   0.87 = 50ª
+  max_roll_inclination:       0.8
+  max_roughness:              0.8 #0.15 #0.8
+  min_points_allowed:         18 #20
+
+  robot_base_frame:           indires_rover/base_link
+  robot_odom_frame:           indires_rover/odom
+  robot_odom_topic:           indires_rover/odom_filtered  #icp_odom
+  
+  nfe_exploration:            true
+  
+  feature_set:                2
+  
+  #feature set 1 = {valid, pitch, roll, roughness}
+  #w1:                         0.4   #pitch
+  #w2:                         0.4  #roll
+  #w3:                         0.2   #roughness 
+  
+  # Weights for function costs 
+  # feature set 2[8] = {valid, pitch, roll, roughness, point_dist, stddev, num_points, goal_dist} //curvature
+  # the weight for the valid features is directly initialized with value 1.0
+  #1/7 = 0.14285
+                              # pitch
+  w1:                         0.1 
+                              # roll
+  w2:                         0.1
+                              # roughness  
+  w3:                         0.1  
+                              # point_dist
+  w4:                         0.175   
+                              # stddev
+  w5:                         0.175 
+                              # num_points 
+  w6:                         0.175  
+                              # goal_dist
+  w7:                         0.175
+  
+  
+  # Visualization
+  #publish_cost_pc:            true
+  #cost_topic_pc:              pcl_filters_node_1/rrt_pointcloud_samples 
+
+  
+
+
+#------------------------------------------------------------
+# Parameters for the PATH FOLLOWING CONTROLLER
+#UpoPlanner:
+
+# Robot Configuration Parameters
+#  max_trans_acc:              1.0 #1.0
+#  max_rot_acc:                1.0 #1.0
+#  max_trans_vel:              0.6 #0.5 
+#  min_trans_vel:              0.1
+#  max_rot_vel:                0.8 #0.7
+#  min_rot_vel:                0.3
+#  min_in_place_rot_vel:       0.5
+
+# Goal Tolerance Parameters
+#  yaw_goal_tolerance:         0.12
+#  xy_goal_tolerance:          0.20
+#  wp_tolerance:               0.5
+  
+# Forward Simulation Parameters
+#  sim_time:                   0.5 
+#  sim_granularity:            0.025
+#  angular_sim_granularity:    0.025
+
+#  controller_freq:            15.0
+
+#  dwa:                        true
+ 
+#  robot_radius:               0.345
+
+#  number_of_lasers:           2
+#  laser1_topic:               scan360
+#  laser2_topic:               depthcamscan_node/scanXtion   
+#  odom_topic:                 odom
+#  laser_uncertainty:          0.025
+  
+
+  

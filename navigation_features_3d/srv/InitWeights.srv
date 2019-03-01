@@ -1,0 +1,4 @@
+bool random
+bool normalize
+---
+float32[] weights

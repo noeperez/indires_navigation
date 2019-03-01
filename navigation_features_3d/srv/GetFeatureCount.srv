@@ -1,0 +1,3 @@
+geometry_msgs/PoseStamped[] path
+---
+float32[] fc

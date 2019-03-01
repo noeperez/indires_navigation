@@ -1,0 +1,29 @@
+<!-- -->
+<launch>
+
+	<!-- launch-prefix="xterm -e gdb (doble hyphen)args"-->
+	 <node pkg="pcl_filters" type="pcl_costmap_node" name="pcl_costmap_node" output="screen" >
+
+		<param name="pointcloud_topic" value="point_map" /> <!-- "indires_rover/front_rgbd_camera/front_rgbd_camera/depth/points" -->
+		<param name="output_topic" value="rrt_costmap" /> 
+		<param name="use_robot_pose" value="true" />
+		<param name="robot_pose_topic" value="/indires_rover/odom_filtered" />
+		<param name="odom_frame" value="indires_rover/odom" /> <!--"indires_rover/odom"-->
+		<param name="sensor_frame" value="indires_rover/front_rgbd_camera/depth_optical_frame" />
+		<param name="local_grid_radius" value="5.0" />
+
+		<param name="filter_ceiling_and_walls" value="false" /> 
+		<param name="show_normal_arrows" value="false" />
+		<param name="pitch_max_inclination" type="double" value="0.87" /> <!-- 0.79 rad = 45º -->
+		<param name="roll_max_inclination" type="double" value="0.87" />
+		<param name="max_roughness" type="double" value="0.8" />  <!--0.03-->
+		<param name="max_height_allowed" type="double" value="1.5" />
+
+		<!--remap from="/upo_navigation_simple/goal" to="/move_base_simple/goal" /-->
+		<rosparam file="$(find pcl_filters)/launch/rrt_costmap_params.yaml" command="load"  /> 
+
+	</node>
+
+
+</launch>
+
