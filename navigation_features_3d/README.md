@@ -5,7 +5,7 @@ Package that calculates the feature functions employed by a cost function for ro
 
 * **Feature set parameters**
 
-	- upo_featureset. Two sets of features are available. 
+	- feature_set. Two sets of features are available: 
 	
 		Value '1' for the set of 3 features: pitch inclination, roll inclination, and roughness. 
 		Cost function C(x) = w1 f1(x) + w2 f2(x) + w3 f3(x) 
@@ -19,7 +19,17 @@ Package that calculates the feature functions employed by a cost function for ro
 	- w4. Normalized weight for the feature of distance between the mean of the set of points and the RRT sample.
 	- w5. Normalized weight for the feature of standard deviation of the set of points.
 	- w6. Normalized weight for the feature of number of points of the set.
-	- w7. Normalized weight for the feature of distance to the goal. 
+	- w7. Normalized weight for the feature of distance to the goal.
+	
+	- pointcloud_topic: name of the topic where the point cloud used for analysis of the traversability of the terrain is being published.
+	- robot_circuns_radius: radius, in meters, of the sphere that cicumscribe the robot shape.
+	- max_pitch_inclination: maximum pitch angle allowed, in radians, to determine wether a sampled area is valid.
+	- max_roll_inclination: maximum roll angle allowed, in radians, to determine wether a sampled area is valid.
+	- max_roughness: maximum value of roughness allowed for a valid sampled area.
+	- min_points_allowed: minimum number of points that a sampled area must contain to be considered valid.
+	- robot_base_frame: TF frame of the robot base. Usually "base_link".
+	- robot_odom_frame: TF frame of the odometry. Usually "odom".
+	- robot_odom_topic: topic where the odometry is being published.
 
 
 
