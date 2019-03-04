@@ -58,7 +58,7 @@ RRT_ros_wrapper:
   # 4 -> Kinodynamic RRTstar 
   # 5 -> Kinodynamic simplified RRTstar
   rrt_planner_type:           2 
-  rrt_solve_time:             5.5 
+  rrt_solve_time:             5.0 
   rrt_goal_bias:              0.07 #0.06 #0.05 
   rrt_max_insertion_dist:     0.25 0.60<-3 0.25<-2  0.50 o 1.0<-4
   rrt_goal_xyz_tol:           0.15 #0.12
@@ -162,7 +162,7 @@ navigation_features_3d:
   robot_odom_frame:           indires_rover/odom
   robot_odom_topic:           indires_rover/odom_filtered  #icp_odom
   
-  nfe_exploration:            true
+  nfe_exploration:            false
   
   feature_set:                2
   
