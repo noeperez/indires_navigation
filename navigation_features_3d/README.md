@@ -33,13 +33,6 @@ Package that calculates the feature functions employed by a cost function for ro
 
 
 
-* **Parameters for obstacle distance feature**
-
-	- use_laser_projection. Boolean to indicate whether to use a projection of the laser readings onto the map and a distance transform to calculate the feature of the distance to closest obstacle. If not, the ROS costmaps are used.
-	- pc_topic. Name of the topic to subscribe to with the point cloud of the sensor readings for projection onto the map.
-	- pc_type. Indicate the type of ROS point cloud message. Value '1' for sensor_msgs/PointCloud, Value '2' for sensor_msgs/PointCloud2.
-
-
 
 ## Dependences
 
