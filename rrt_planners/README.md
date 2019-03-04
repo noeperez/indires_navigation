@@ -5,22 +5,19 @@ This is a catkin package of ROS that contains two libraries:
 
 * *upo_rrt_planners*: C++ library that contains the following RRT planners:
 
-	- *simple RRT*: RRT planner in x,y coordinates without reasoning about kinodynamic constraints.
-	- *simple RRTstar*: RRT* planner in x,y coordinates without reasoning about kinodynamic constraints.
+	- *simple RRTstar*: RRT* planner in x,y, z coordinates without reasoning about kinodynamic constraints.
 	- *RRT*: RRT planner with kinodynamic constrains.
-	- *RRTstar*: RRT* planner with kinodynamic constrains.
-
 
 * *upo_rrt_planners_ros*: C++ library that wraps the previous library in order to be used in ROS. 
 
 
 ## Dependences
 
-* Package **navigation_features**.
+* Package **navigation_features_3d**.
 
 ## Parameters
 
-* **rrt_planner_type**. RRT planner to use (value 1,2,3,4 or 5)
+* **rrt_planner_type**. RRT planner to use (value 1,2,3,4 or 5) ONLY AVAILABLE OPTIONS 2 AND 3 CURRENTLY
 	- 1 RRT. *x,y* state space (no dynamics).
 	- 2 RRT*. *x,y* state space (no dynamics).
 	- 3 Kinodynamic RRT (*x, y, yaw* state space).
@@ -29,7 +26,7 @@ This is a catkin package of ROS that contains two libraries:
 * **rrt_solve_time**. Time in seconds that the RRT* planner is allowed to plan a path. Maximum time to find a path in the case of the RRT.
 * **rrt_goal_bias**. probability bias to sample the goal.
 * **rrt_max_insertion_dist**. Maximum distance (m) to insert a new node from the nearest node of the sample.
-* **rrt_goal_xy_tol**. Tolerance (m) to consider that the goal has been reached in the x,y space.
+* **rrt_goal_xyz_tol**. Tolerance (m) to consider that the goal has been reached in the x,y space.
 * **rrt_goal_th_tol**. Tolerance (radians) to consider that the goal has been reached in the angular space.
 * **rrt_interpolate_path_dist**. Distance (m) between nodes to perform an interpolation of the resulting path. Use value 0 for no interpolation.
 
@@ -50,7 +47,8 @@ Only for kinodynamic planners:
 	- 2 Modified version of the POSQ for more flexible turns.
 
 State Space:
-* **rrt_dimensions**. Usually it should be 2 (*x,y* state space) for non-kinodynamic planners, or 3 (*x,y* and *yaw*) for kinodynamic planners.
+* **rrt_dimensions**. It can be 2 (*x,y* state space), or 3 (*x,y* and *yaw* or *z*).
+* **dimensions_type**. Only applicable if *rrt_dimensions* = 3. Use value 1 for using *x,y* and *yaw* as dimensions or value 2, for using dimensions *x,y* and *z*.
 * **distance_type**. Functions available to calculate the distance between nodes necessary to obtain the nearest neighbor. The options are:
 	- 1 Distance calculated as *(x1-x2)+(y1-y2)*.
 	- 2 Euclidean distance.
@@ -62,7 +60,8 @@ State Space:
 	- 4 Sum of the costs. *Cost1 + Cost2*.
 * **rrt_size_x**. Size in meters of the *x* dimension. So, the range is [-x, x].
 * **rrt_size_y**. Size in meters of the *y* dimension. So, the range is [-y, y].
-* **rrt_xy_resolution**. Resolution of the *x,y* space.
+* **rrt_size_z**. Size in meters of the *z* dimension. So, the range is [-z, z].
+* **rrt_xyz_resolution**. Resolution of the *x,y,z* space.
 * **robot_radius**. Radius of the inscribed circunference of the robot (meters).
 
 Path smoothing:
@@ -75,12 +74,18 @@ Visualization options:
 * **show_rrt_statistics**. If it is enabled (boolean to true), some statistics about the RRT execution are shown on the screen.
 * **show_intermediate_states**. If it is enabled (boolean to true), the intermediate states corresponding to the time step between nodes are published as a marker in the topic *~/rrt_path-interpol_points*. Only valid for kinodynamic planners.
 
+Using a point cloud as sample space instead of uniform sampling of the space
+* **use_external_pc_as_samples**. If it is enabled, a the 3D points of a point cloud would be used as sampling space for the planner.
+* **pc_topic**. ROS topic where the point cloud is being published.
+* **robot_base_frame**. TF frame of the robot base. Usually "base_link".
+* **robot_odom_frame**. TF frame of the robot odometry. Usually "odom".
+* **robot_pc_sensor_frame**. TF frame of the sensor that is publishing the point cloud.
+
 
 The upo_rrt_planners library uses nearest neighbor data structures through the FLANN library. See: M. Muja and D.G. Lowe, "Fast Approximate Nearest Neighbors with Automatic Algorithm Configuration", in International Conference on Computer Vision Theory and Applications (VISAPP'09), 2009. http://people.cs.ubc.ca/~mariusm/index.php/FLANN/FLANN
 
-#### TODO
-- [ ] Replace regular pointers by boost smart pointers. 
-- [ ] Add new RRT algorithms.
+#### TODO 
+- [ ] Add the rest of RRT algorithms.
 - [ ] Add a plugin to be used as a global planner in the move_base architecture of ROS.
 
 
