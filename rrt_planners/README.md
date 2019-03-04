@@ -74,7 +74,7 @@ Visualization options:
 * **show_rrt_statistics**. If it is enabled (boolean to true), some statistics about the RRT execution are shown on the screen.
 * **show_intermediate_states**. If it is enabled (boolean to true), the intermediate states corresponding to the time step between nodes are published as a marker in the topic *~/rrt_path-interpol_points*. Only valid for kinodynamic planners.
 
-Using a point cloud as sample space instead of uniform sampling of the space
+Using a point cloud as sample space instead of uniform sampling of the space:
 * **use_external_pc_as_samples**. If it is enabled, a the 3D points of a point cloud would be used as sampling space for the planner.
 * **pc_topic**. ROS topic where the point cloud is being published.
 * **robot_base_frame**. TF frame of the robot base. Usually "base_link".
