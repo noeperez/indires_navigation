@@ -13,15 +13,15 @@ ROS package to apply different filters to point clouds. It is used to provide tw
 
 * *local_grid_radius*: radius in meters of the local area considered around the robot where the global point cloud must be cropped.
 
-* *filter_ceiling*: 
+* *filter_ceiling*: boolean to indicate whether the ceiling and the walls should be removed (partially) from the point cloud. 
 
-* *show_normal_arrows*: 
+* *show_normal_arrows*: boolean to indicate if the normal vectors of the surface should be published to be visualized in RViz.
 
-* *pith_max_inclination*:
+* *pith_max_inclination*: surfaces that exceed this maximum inclination of the pitch will be removed. (Only applicable if filter_ceiling is true).
 
-* *roll_max_inclination*:
+* *roll_max_inclination*: surfaces that exceed this maximum inclination of the roll will be removed. (Only applicable if filter_ceiling is true).
 
-* *max_roughness*:
+* *max_roughness*: surfaces that exceed this maximum terrain roughness will be removed. (Only applicable if filter_ceiling is true).
 
 
 ## PCL filters Parameters
