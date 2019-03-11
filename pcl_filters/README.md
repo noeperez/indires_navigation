@@ -3,7 +3,7 @@ ROS package to apply different filters to point clouds. It is used to provide tw
 
 ## General Parameters
 
-* *pointcloud_topic*: ROS topic where the point cloud to be filteres is being published. 
+* *pointcloud_topic*: ROS topic where the point cloud to be filtered is being published. 
 
 * *output_topic*: name of the ROS to topic where to publish the output point cloud filtered.
 
