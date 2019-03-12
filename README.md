@@ -15,6 +15,9 @@ Package for calculation of sample validity and feature functions employed by the
 * *pcl_filters*:  
 ROS package to apply different filters to pointclouds. It makes use of PCL 1.9.
 
+* *rrt_planner_plugin*:
+ROS plugin that allows to employ the RRT planners as global planner in the move_base architecture for navigation of ROS.
+
 
 #### TODO
 - [ ] Add a local controller for robot motion. 
