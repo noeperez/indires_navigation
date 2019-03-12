@@ -811,13 +811,17 @@ void RRT_ros::RRT_ros_wrapper::setSamplingSpace()
 /**
 * The coordinates of the start and goal should be in robot base frame (base_link) 
 */
-std::vector<geometry_msgs::PoseStamped> RRT_ros::RRT_ros_wrapper::RRT_plan(bool exploration, geometry_msgs::Pose start, geometry_msgs::Pose goal, float start_lin_vel, float start_ang_vel)
+std::vector<geometry_msgs::PoseStamped> RRT_ros::RRT_ros_wrapper::RRT_plan(bool exploration, geometry_msgs::PoseStamped start, geometry_msgs::PoseStamped goal, float start_lin_vel, float start_ang_vel)
 {
 	rrt_planner_->setExploration(exploration);
 	RRT::State* g = NULL;
+	
+	geometry_msgs::PoseStamped st = checker_->transformPoseTo(start, robot_base_frame_, false);
+	geometry_msgs::PoseStamped gl = checker_->transformPoseTo(goal, robot_base_frame_, false);
+	
 	if(exploration)
 	{
-		if(!rrt_planner_->setStart(start.position.x, start.position.y, start.position.z, tf::getYaw(start.orientation)))
+		if(!rrt_planner_->setStart(st.pose.position.x, st.pose.position.y, st.pose.position.z, tf::getYaw(st.pose.orientation)))
 		{
 			ROS_ERROR("RRT_plan. Start state is not valid!!!");
 			rrt_plan_.clear();
@@ -834,9 +838,11 @@ std::vector<geometry_msgs::PoseStamped> RRT_ros::RRT_ros_wrapper::RRT_plan(bool 
 	
 	else {
 		
+		//geometry_msgs::PoseStamped p = req.goal;
+		//printf("makePlanService. x:%.2f, y:%.2f, z:%.2f, w:%.2f\n", p.pose.orientation.x, p.pose.orientation.y, p.pose.orientation.z, p.pose.orientation.w);
 		
 		//printf("exploration = %i", (int)exploration);
-		if(!rrt_planner_->setStartAndGoal(start.position.x, start.position.y, start.position.z, tf::getYaw(start.orientation), goal.position.x, goal.position.y, goal.position.z, tf::getYaw(goal.orientation))){
+		if(!rrt_planner_->setStartAndGoal(st.pose.position.x, st.pose.position.y, st.pose.position.z, tf::getYaw(start.pose.orientation), gl.pose.position.x, gl.pose.position.y, gl.pose.position.z, tf::getYaw(gl.pose.orientation))){
 			ROS_ERROR("RRT_plan. Goal state is not valid!!!");
 			rrt_plan_.clear();
 			geometry_msgs::PoseStamped p;
@@ -851,16 +857,16 @@ std::vector<geometry_msgs::PoseStamped> RRT_ros::RRT_ros_wrapper::RRT_plan(bool 
 		//if we use costs (RRT* versions)
 		if(rrt_planner_type_ == 2 || rrt_planner_type_ >= 4) {
 			//Set the goal in the state checker
-			g = new RRT::State(goal.position.x, goal.position.y, goal.position.z, tf::getYaw(goal.orientation));
+			g = new RRT::State(gl.pose.position.x, gl.pose.position.y, gl.pose.position.z, tf::getYaw(gl.pose.orientation));
 			checker_->setGoal(g);
 			
 		}
 
-		geometry_msgs::PoseStamped rg;
-		rg.header.frame_id = robot_base_frame_;
-		rg.header.stamp = ros::Time();
-		rg.pose = goal;
-		rrt_goal_pub_.publish(rg);
+		//geometry_msgs::PoseStamped rg;
+		//rg.header.frame_id = robot_base_frame_;
+		//rg.header.stamp = ros::Time();
+		//rg.pose = goal;
+		rrt_goal_pub_.publish(gl);
 		
 		//visualize rrt goal
 		visualization_msgs::Marker marker;
@@ -870,8 +876,8 @@ std::vector<geometry_msgs::PoseStamped> RRT_ros::RRT_ros_wrapper::RRT_plan(bool 
 		marker.id = 0;
 		marker.type = visualization_msgs::Marker::ARROW;
 		marker.action = visualization_msgs::Marker::ADD;
-		marker.pose.position = goal.position;
-		marker.pose.orientation = goal.orientation;
+		marker.pose.position = gl.pose.position;
+		marker.pose.orientation = gl.pose.orientation;
 		// Set the scale of the marker 
 		marker.scale.x = 0.7;
 		marker.scale.y = 0.15;
@@ -1120,25 +1126,27 @@ std::vector<geometry_msgs::PoseStamped> RRT_ros::RRT_ros_wrapper::RRT_plan(bool 
 bool RRT_ros::RRT_ros_wrapper::makePlanService(rrt_planners::MakePlan::Request &req, rrt_planners::MakePlan::Response &res)
 {
 	printf("rrt_ros_wrapper. make plan service received!\n");
-	geometry_msgs::Pose goal;
+	geometry_msgs::PoseStamped goal = req.goal;
 	bool explore = false;
 	if(req.goal.header.frame_id.empty())
 	{
 		printf("rrt_ros_wrapper. Goal empty! Passing to EXPLORATION MODE!!! \n");
 		explore = true;
-	} else {
+	} /*else {
 		geometry_msgs::PoseStamped p = req.goal;
 		//printf("makePlanService. x:%.2f, y:%.2f, z:%.2f, w:%.2f\n", p.pose.orientation.x, p.pose.orientation.y, p.pose.orientation.z, p.pose.orientation.w);
-		p = checker_->transformPoseTo(p, robot_base_frame_, false);
+		//p = checker_->transformPoseTo(p, robot_base_frame_, false);
 		goal.position = p.pose.position;
 		goal.orientation = p.pose.orientation;
-	}
+	}*/
 	
-	geometry_msgs::Pose start;
-	start.position.x = 0.0;
-	start.position.y = 0.0;
-	start.position.z = 0.0;
-	start.orientation = tf::createQuaternionMsgFromYaw(0.0);
+	geometry_msgs::PoseStamped start;
+	start.header.stamp = ros::Time::now();
+	start.header.frame_id = "base_link";
+	start.pose.position.x = 0.0;
+	start.pose.position.y = 0.0;
+	start.pose.position.z = 0.0;
+	start.pose.orientation = tf::createQuaternionMsgFromYaw(0.0);
 	
 	//goal.theta = tf::getYaw(p.pose.orientation);	
 

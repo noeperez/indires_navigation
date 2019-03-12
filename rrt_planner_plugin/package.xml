@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format2.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="2">
+  <name>rrt_planner_plugin</name>
+  <version>1.0.0</version>
+  <description>
+     A plugin to use the 3D RRT planners library in the ROS move_base.
+  </description>
+  <maintainer email="noe.perez@uc3m.com">Noé Pérez-Higueras</maintainer>
+  <license>BSD</license>
+
+  <author>Noé Pérez-Higueras</author>
+  <url>http://github.com/noeperez/indires_navigation</url>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>angles</build_depend>
+  <build_depend>tf2_geometry_msgs</build_depend>
+
+  <depend>costmap_2d</depend>
+  <depend>dynamic_reconfigure</depend>
+  <depend>geometry_msgs</depend>
+  <depend>nav_core</depend>
+  <depend>nav_msgs</depend>
+  <depend>navfn</depend>
+  <depend>pluginlib</depend>
+  <depend>roscpp</depend>
+  <depend>tf2_ros</depend>
+  <depend>tf</depend>
+  <depend>rrt_planners</depend>
+
+  <export>
+      <nav_core plugin="${prefix}/bgrrt_plugin.xml" />
+  </export>
+
+</package>

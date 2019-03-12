@@ -91,7 +91,7 @@ namespace RRT_ros {
 			////Only for RRT as a local controller
 			//void setup_controller(float controller_freq, float path_stddev, int planner_type);
 	
-			std::vector<geometry_msgs::PoseStamped> RRT_plan(bool exploration, geometry_msgs::Pose start, geometry_msgs::Pose goal, float start_lin_vel, float start_ang_vel);
+			std::vector<geometry_msgs::PoseStamped> RRT_plan(bool exploration, geometry_msgs::PoseStamped start, geometry_msgs::PoseStamped goal, float start_lin_vel, float start_ang_vel);
 
 			float get_rrt_planning_radius();
 			
@@ -164,6 +164,10 @@ namespace RRT_ros {
 						
 				return norm;
 			}
+			
+			
+			inline std::string get_robot_base_frame() {return robot_base_frame_;};
+			inline std::string get_robot_odom_frame() {return robot_odom_frame_;};
 
 
 		private:
