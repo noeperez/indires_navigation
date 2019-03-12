@@ -10,7 +10,7 @@ Package that calculates the feature functions employed by a cost function for ro
 		Value '1' for the set of 3 features: pitch inclination, roll inclination, and roughness. 
 		Cost function C(x) = w1 f1(x) + w2 f2(x) + w3 f3(x) 
 		
-		Value '2' for the set of 7 features: pitch inclination, roll inclination, roughness, distance between the mean of a set of points the sample evaluated, standard deviation of the set of points, inversed num of points (1-num_points) of the set, and distance to the given goal (not applied in case of exploration). All these features are normalized, [0,1]. 
+		Value '2' for the set of 7 features: pitch inclination, roll inclination, roughness, distance between the mean of a set of points and the sample evaluated, standard deviation of the set of points, inversed num of points (1-num_points) of the set, and distance to the given goal (not applied in case of exploration). All these features are normalized, [0,1]. 
 		Cost function C(x) = w1 f1(x) + w2 f2(x) + w3 f3(x) + w4 f4(x) + w5 f5(x) + w6 f6(x) + w7 f7(x)
 		
 	- w1. Normalized weight for the feature of pitch inclination.
@@ -23,8 +23,8 @@ Package that calculates the feature functions employed by a cost function for ro
 	
 	- pointcloud_topic: name of the topic where the point cloud used for analysis of the traversability of the terrain is being published.
 	- robot_circuns_radius: radius, in meters, of the sphere that cicumscribe the robot shape.
-	- max_pitch_inclination: maximum pitch angle allowed, in radians, to determine wether a sampled area is valid.
-	- max_roll_inclination: maximum roll angle allowed, in radians, to determine wether a sampled area is valid.
+	- max_pitch_inclination: maximum pitch angle allowed, in radians, to determine whether a sampled area is valid.
+	- max_roll_inclination: maximum roll angle allowed, in radians, to determine whether a sampled area is valid.
 	- max_roughness: maximum value of roughness allowed for a valid sampled area.
 	- min_points_allowed: minimum number of points that a sampled area must contain to be considered valid.
 	- robot_base_frame: TF frame of the robot base. Usually "base_link".
