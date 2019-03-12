@@ -1,5 +1,7 @@
 # rrt_planner_plugin
-ROS plugin that allows to employ the RRT planners as global planner in the move_base architecture for navigation of ROS
+ROS plugin that allows to employ the RRT planners as global planner in the move_base architecture for navigation of ROS.
+
+Note that the goal passed to the planner must be inside the limits of the area for planning defined in the RRT planner parameters.
 
 
 
