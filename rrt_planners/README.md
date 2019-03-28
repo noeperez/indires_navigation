@@ -20,7 +20,7 @@ This is a catkin package of ROS that contains two libraries:
 The planner works through a ROS service called "/RRT_ros_wrapper/makeRRTPlan". The message type is "rrt_planners/MakePlan" which has the parameter "goal" [geometry_msgs/PoseStamped]. So, a goal position can be passed to the planner to plan a path to it in the given planning time. The service returns a vector of the poses of the path. Note that the goal position must be inside the space size given to the planner.
 If the frame_id of the given goal is empty, the planner directly switch to exploration mode, and computes the most promising goal to move according to pre-defined criteria.
 
-This planner also can work as a global planner to the move_base architecture or ROS navigation. See the packages global_rrt_planner and adapted_move_base. 
+This planner also can work as a global planner in the move_base architecture or ROS navigation. See the packages global_rrt_planner and adapted_move_base. 
 
 
 
