@@ -3,7 +3,7 @@ Package that calculates the feature functions employed by a cost function for ro
 
 ## Parameters
 
-* **Feature set parameters**
+* **Feature set parameters for navigation**
 
 	- feature_set. Two sets of features are available: 
 	
@@ -21,6 +21,15 @@ Package that calculates the feature functions employed by a cost function for ro
 	- w6. Normalized weight for the feature of number of points of the set.
 	- w7. Normalized weight for the feature of distance to the goal.
 	
+* **Weight set parameters for exploration**
+The cost function for selecting the most promising frontier for exploration (leaf node of the RRT* tree) is based on three features: the number of points detected around the leaf, the proximity between the leaf and the closest point of the trajectory of the robot so far, and the cost of the RRT* path to reach the leaf.  
+
+	- wexp1. Normalized weight for the feature of number of point around the leaf.
+	- wexp2. Normalized weight for the feature of of proximity between the leaf and the traveled path of the robot.
+	- wexp3. Normalized weight for the feature of RRT* path cost.
+
+* **Other parameters**
+
 	- pointcloud_topic: name of the topic where the point cloud used for analysis of the traversability of the terrain is being published.
 	- robot_circuns_radius: radius, in meters, of the sphere that cicumscribe the robot shape.
 	- max_pitch_inclination: maximum pitch angle allowed, in radians, to determine whether a sampled area is valid.
