@@ -19,6 +19,7 @@ This is a catkin package of ROS that contains two libraries:
 
 The planner works through a ROS service called "/RRT_ros_wrapper/makeRRTPlan". The message type is "rrt_planners/MakePlan" which has the parameter "goal" [geometry_msgs/PoseStamped]. So, a goal position can be passed to the planner to plan a path to it in the given planning time. The service returns a vector of the poses of the path. Note that the goal position must be inside the space size given to the planner.
 If the frame_id of the given goal is empty, the planner directly switch to exploration mode, and computes the most promising goal to move according to pre-defined criteria.
+This planner also can work as a global planner to the move_base architecture or ROS navigation. See the packages global_rrt_planner and adapted_move_base. 
 
 
 
@@ -86,6 +87,7 @@ Using a point cloud as sample space instead of uniform sampling of the space:
 * **robot_base_frame**. TF frame of the robot base. Usually "base_link".
 * **robot_odom_frame**. TF frame of the robot odometry. Usually "odom".
 * **robot_pc_sensor_frame**. TF frame of the sensor that is publishing the point cloud.
+* **features_name**. String that would be used as a prefix to look for the parameters required by the navigation_features_3d in the parameter server since it is used here for traversability analysis.    
 
 
 The upo_rrt_planners library uses nearest neighbor data structures through the FLANN library. See: M. Muja and D.G. Lowe, "Fast Approximate Nearest Neighbors with Automatic Algorithm Configuration", in International Conference on Computer Vision Theory and Applications (VISAPP'09), 2009. http://people.cs.ubc.ca/~mariusm/index.php/FLANN/FLANN
