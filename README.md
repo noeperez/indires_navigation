@@ -15,12 +15,18 @@ Package for calculation of sample validity and feature functions employed by the
 * *pcl_filters*:  
 ROS package to apply different filters to pointclouds. It makes use of PCL 1.9.
 
-* *rrt_planner_plugin*:   
+* *global_rrt_planner*:   
 ROS plugin that allows to employ the RRT planners as global planner in the move_base architecture for navigation under ROS.
 
+* *local_3d_planner*:   
+A local controller in 3D to follow a given global path. It follows the ROS BaseLocalPlanner plugin that allows to employ the controller as local planner in the move_base architecture for navigation under ROS.
 
-#### TODO
-- [ ] Add a local controller for robot motion. 
-- [ ] Integrate the path planning with the local controller and manage the navigation.
+* *adapted_move_base*:   
+This is a modified version of the original move_base package of ROS. This modification allows to use other global or local planners  (following the ROS move_base premises) that do not use the standard ROS Costamps for planning. Two new boolean parameters are added to indicate the use of the global and/or local costmap (use_global_costmap2d and use_local_costmap2d).
+
+* *costmap_2d*:   
+The regular costmap_2d package of ROS has a dependency on PCL. Therefore, as we are using here the version 1.9.1 of the PCL library, we need to include this package with the aim of keeping everything working properly. Only the CMakeLists.txt has been modified to take the PCL version 1.9.1 in comparison with the original ROS package (Kinetic distro). 
+
+
 
 The package is a **work in progress** used in research prototyping. Pull requests and/or issues are highly encouraged.
