@@ -1,0 +1,7 @@
+<library path="lib/libglobal_rrt_planner">
+  <class name="global_rrt_planner/GlobalRRTPlanner" type="global_rrt_planner::GlobalRRTPlanner" base_class_type="nav_core::BaseGlobalPlanner">
+    <description>
+      A plugin to use the 3D RRT planners library in the ROS move_base
+    </description>
+  </class>
+</library>

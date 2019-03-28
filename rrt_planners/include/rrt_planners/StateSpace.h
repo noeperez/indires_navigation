@@ -41,6 +41,7 @@ namespace RRT
 
 			void setExternalSamples(std::vector<State>* space);
 			
+			
 			//State* samplePathBiasing(std::vector<State>* path, float stddev, float yawdev = 0.2);
 			
 			float sampleUniform(); //value between [0, 1]

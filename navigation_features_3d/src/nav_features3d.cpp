@@ -11,10 +11,19 @@
 using namespace std;
 
 
-nav3d::Features3D::Features3D() {}
+nav3d::Features3D::Features3D() {
+	tf_listener_ = new tf::TransformListener(ros::Duration(10));
+	size_x_ = 5.0*2.0;  	//m
+	size_y_ = 5.0*2.0;  	//m	
+	size_z_ = 5.0*2.0;  	//m
+	//resolution_ = res;		//m/cell	
+	max_planning_dist_ = sqrt((size_x_*size_x_)+(size_y_*size_y_)+(size_z_*size_z_));
+
+	setParams(std::string("navigation_features_3d"));
+}
 
 
-nav3d::Features3D::Features3D(tf::TransformListener* tf, float size_x, float size_y, float size_z) 
+nav3d::Features3D::Features3D(std::string name, tf::TransformListener* tf, float size_x, float size_y, float size_z) 
 {
 	tf_listener_ = tf;
 	size_x_ = size_x*2.0;  	//m
@@ -23,14 +32,14 @@ nav3d::Features3D::Features3D(tf::TransformListener* tf, float size_x, float siz
 	//resolution_ = res;		//m/cell	
 	max_planning_dist_ = sqrt((size_x_*size_x_)+(size_y_*size_y_)+(size_z_*size_z_));
 
-	setParams();
+	setParams(name);
 
 }
 
 
 
 
-nav3d::Features3D::Features3D(tf::TransformListener* tf, vector<geometry_msgs::Point>* footprint, float size_x, float size_y, float size_z)
+nav3d::Features3D::Features3D(std::string name, tf::TransformListener* tf, vector<geometry_msgs::Point>* footprint, float size_x, float size_y, float size_z)
 {
 	
 	tf_listener_ = tf;
@@ -44,7 +53,7 @@ nav3d::Features3D::Features3D(tf::TransformListener* tf, vector<geometry_msgs::P
 	myfootprint_ = footprint;
 	
 	
-	setParams();
+	setParams(name);
 
 	
 
@@ -54,13 +63,14 @@ nav3d::Features3D::Features3D(tf::TransformListener* tf, vector<geometry_msgs::P
 
 
 
-void nav3d::Features3D::setParams()
+void nav3d::Features3D::setParams(std::string name)
 {
 	
-	ROS_INFO("NAVIGATION FEATURES 3D. SETTING PARAMETERS...");
+	ROS_INFO("%s. SETTING PARAMETERS...", name.c_str());
 	//Read the ROS params from the server
-	ros::NodeHandle n("~/navigation_features_3d");
+	ros::NodeHandle n(("~/" + name));
 
+	name_ = name;
 
 	//Dynamic reconfigure
 	//dsrv_ = new dynamic_reconfigure::Server<navigation_features::nav_featuresConfig>(n); //ros::NodeHandle("~")
@@ -70,7 +80,7 @@ void nav3d::Features3D::setParams()
     feature_set_ = 1;
 	n.getParam("feature_set", feature_set_);
 	
-	//Load weights "w1, w2, ..."
+	//LOAD THE WEIGHTS OF THE COST FUNCTION FOR NAVIGATION
 	w_.clear();
 	w_.push_back(1.0); //weight for the valid feature (boolean [0,1])
 	
@@ -88,7 +98,7 @@ void nav3d::Features3D::setParams()
 				double wg = 0.0;
 				n.getParam(st.c_str(), wg);
 				w_.push_back((float)wg);	
-				printf("NavFeatures3d. weight %u= %.3f loaded\n", i, wg);
+				printf("%s. weight %u= %.3f loaded\n", name_.c_str(), i, wg);
 			}
 			i++;
 		}
@@ -106,7 +116,7 @@ void nav3d::Features3D::setParams()
 				double wg = 0.0;
 				n.getParam(st.c_str(), wg);
 				w_.push_back((float)wg);	
-				printf("NavFeatures3d. weight %u= %.3f loaded\n", i, wg);
+				printf("%s. weight %u= %.3f loaded\n", name_.c_str(), i, wg);
 			} else {
 				//printf("param '%s' not found\n", st.c_str());
 				ok = false;
@@ -114,10 +124,34 @@ void nav3d::Features3D::setParams()
 			i++;
 		}
 	}
+	
+	
+	//LOAD THE WEIGHTS OF THE COST FUNCTION FOR EXPLORATION
+	wexp_.clear();
+	bool ok = true;
+	unsigned int i = 1;
+	while(ok)
+	{
+		char buf[10];
+		sprintf(buf, "wexp%u", i);
+		string st = string(buf);
+			
+		if(n.hasParam(st.c_str())){
+			double wg = 0.0;
+			n.getParam(st.c_str(), wg);
+			wexp_.push_back((float)wg);	
+			printf("%s. exploration weight %u= %.3f loaded\n", name_.c_str(), i, wg);
+		} else {
+			ok = false;
+		}
+		i++;
+	}
+
 
 	
 	string cloud_topic;
 	n.param<string>("pointcloud_topic", cloud_topic, string("/scan360/point_cloud")); 
+	printf("\n %s. topic subscribed: %s \n", name_.c_str(), cloud_topic.c_str());
 
 	double pitch_max = M_PI/2.0;
 	double roll_max = M_PI/2.0;
@@ -125,6 +159,8 @@ void nav3d::Features3D::setParams()
 	n.getParam("max_pitch_inclination", pitch_max);
 	n.getParam("max_roll_inclination", roll_max);
 	n.getParam("max_roughness", roughness_);
+	printf("%s. max pitch inclination:%.2f, max roll inclination:%.2f \n", name_.c_str(), pitch_max, roll_max);
+	printf("%s. max roughness:%.2f\n", name_.c_str(), roughness_);
 	min_points_allowed_ = 20;
 	n.getParam("min_points_allowed", min_points_allowed_);
 
@@ -215,7 +251,7 @@ void nav3d::Features3D::cloudCallback(const sensor_msgs::PointCloud2::ConstPtr& 
 	//Transform the coordinates of the pointcloud
 	sensor_msgs::PointCloud2 local;
 	if(!pcl_ros::transformPointCloud(robot_odom_frame_, *msg, local, *tf_listener_)) {
-		ROS_WARN("nav_features3d. CloudCallback. TransformPointCloud failed!!!!!");
+		ROS_WARN("%s. CloudCallback. TransformPointCloud failed!!!!!", name_.c_str());
 	} else {
 
 		pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
@@ -334,7 +370,7 @@ std::vector<std::vector<int> > nav3d::Features3D::clusterize_leaves(std::vector<
 
 	if(cluster_indices.empty())
 	{
-		printf("Clusterize_leaves. No clusters found!!!\n");
+		printf("%s. Clusterize_leaves. No clusters found!!!\n", name_.c_str());
 		return clusters;
 	}	
 
@@ -370,14 +406,77 @@ std::vector<std::vector<int> > nav3d::Features3D::clusterize_leaves(std::vector<
 
 
 
-std::vector<float> nav3d::Features3D::evaluate_leaves(std::vector<geometry_msgs::Point>* points, float radius)
+float nav3d::Features3D::evaluate_leaf(geometry_msgs::Point* p, float rrt_cost, std::string frame, float radius)
+{
+	geometry_msgs::PoseStamped ps;
+	ps.header.frame_id = frame;
+	ps.header.stamp = ros::Time::now();
+	ps.pose.position = *p;
+	ps.pose.orientation = tf::createQuaternionMsgFromYaw(0.0);
+	geometry_msgs::PoseStamped st = transformPoseTo(ps, robot_odom_frame_, false);
+	
+	if(nfe_exploration_)
+	{
+		float max_dist = 5.0*5.0;
+		float dcost = no_return_cost(&st);
+			
+		float d = (p->x*p->x + p->y*p->y + p->z*p->z);
+		if (d>max_dist)
+			d = max_dist;
+		float nfe_cost = d/max_dist;
+			
+		float exp_cost = 0.6*nfe_cost + 0.4*dcost;
+		return exp_cost;
+		
+	}
+	
+	
+	pcl::PointXYZ sp;
+	sp.x = st.pose.position.x;
+	sp.y = st.pose.position.y;
+	sp.z = st.pose.position.z;
+		
+	std::vector<int> pointIdxRadiusSearch;
+	std::vector<float> pointRadiusSquaredDistance;
+
+	tree_mutex_.lock();
+
+	float num_points = kdtree_->radiusSearch(sp, radius, pointIdxRadiusSearch, pointRadiusSquaredDistance);
+	//printf("3DNavFeat. Evaluate_leaves. leaf %i, num_points: %.1f", i, num_points);
+		
+	if(num_points > 0.0)
+	{
+		//Normalize num_points
+		float max_points = 10000.0;
+		if(num_points > max_points) num_points = max_points;
+			num_points = (num_points/max_points);
+				
+	} else
+		num_points = 1.0;
+			
+	float dcost = no_return_cost(&st);
+			
+	tree_mutex_.unlock();
+	
+	float exp_cost;
+	if(rrt_cost == -1.0)
+		exp_cost = (wexp_[0]+wexp_[2]/2.0)*num_points + (wexp_[1]+wexp_[2]/2.0)*dcost;
+	else
+		exp_cost = wexp_[0]*num_points + wexp_[1]*dcost + wexp_[2]*rrt_cost;  //0.45, 0.35, 0.2 
+		
+	return exp_cost;
+	
+}
+
+
+std::vector<float> nav3d::Features3D::evaluate_leaves(std::vector<geometry_msgs::Point>* points, std::string frame, float radius)
 {
 	
 	//publish exploration goals and costs
 	visualization_msgs::MarkerArray ma;
 	
 	visualization_msgs::Marker l;
-	l.header.frame_id = robot_base_frame_;
+	l.header.frame_id = frame;
 	l.header.stamp = ros::Time();
 	l.ns = "rrt_exploration_costs";
 	l.type = visualization_msgs::Marker::CYLINDER;
@@ -406,14 +505,14 @@ std::vector<float> nav3d::Features3D::evaluate_leaves(std::vector<geometry_msgs:
 	std::vector<float> gain_info;
 	
 	geometry_msgs::PoseStamped ps;
-	ps.header.frame_id = robot_base_frame_;
+	ps.header.frame_id = frame;
 	ps.header.stamp = ros::Time::now();
 	
 	
 	if(nfe_exploration_)
 	{
 		
-		float max_dist = 5.0;
+		float max_dist = 5.0*5.0;
 		for(unsigned int i=0; i<points->size(); i++)
 		{
 			ps.pose.position = points->at(i);
@@ -422,7 +521,7 @@ std::vector<float> nav3d::Features3D::evaluate_leaves(std::vector<geometry_msgs:
 			float dcost = no_return_cost(&st);
 			
 			geometry_msgs::Point p = points->at(i);
-			float d = sqrt(p.x*p.x + p.y*p.y + p.z*p.z);
+			float d = p.x*p.x + p.y*p.y + p.z*p.z;
 			if (d>max_dist)
 				d = max_dist;
 			float nfe_cost = d/max_dist;
@@ -483,7 +582,7 @@ std::vector<float> nav3d::Features3D::evaluate_leaves(std::vector<geometry_msgs:
 			
 		tree_mutex_.unlock();
 		
-		float cost = 0.5*num_points + 0.3*dcost; // + 0.1*point_dist + 0.1*stddev;
+		float cost = 0.45*num_points + 0.35*dcost; // + 0.1*point_dist + 0.1*stddev;
 		gain_info.push_back(cost);
 		
 		l.id = i+300;
@@ -548,57 +647,11 @@ float nav3d::Features3D::no_return_cost(geometry_msgs::PoseStamped* p)
 
 
 
-/*
-template<typename PointT> bool
-   64 pcl::PCA<PointT>::initCompute () 
-   65 {
-   66   if(!Base::initCompute ())
-   67   {
-   68     PCL_THROW_EXCEPTION (InitFailedException, "[pcl::PCA::initCompute] failed");
-   69     return (false);
-   70   }
-   71   if(indices_->size () < 3)
-   72   {
-   73     PCL_THROW_EXCEPTION (InitFailedException, "[pcl::PCA::initCompute] number of points < 3");
-   74     return (false);
-   75   }
-   76   
-   77   // Compute mean
-   78   mean_ = Eigen::Vector4f::Zero ();
-   79   compute3DCentroid (*input_, *indices_, mean_);  
-   80   // Compute demeanished cloud
-   81   Eigen::MatrixXf cloud_demean;
-   82   demeanPointCloud (*input_, *indices_, mean_, cloud_demean);
-   83   assert (cloud_demean.cols () == int (indices_->size ()));
-   84   // Compute the product cloud_demean * cloud_demean^T
-   85   Eigen::Matrix3f alpha = static_cast<Eigen::Matrix3f> (cloud_demean.topRows<3> () * cloud_demean.topRows<3> ().transpose ());
-   86   
-   87   // Compute eigen vectors and values
-   88   Eigen::SelfAdjointEigenSolver<Eigen::Matrix3f> evd (alpha);
-   89   // Organize eigenvectors and eigenvalues in ascendent order
-   90   for (int i = 0; i < 3; ++i)
-   91   {
-   92     eigenvalues_[i] = evd.eigenvalues () [2-i];
-   93     eigenvectors_.col (i) = evd.eigenvectors ().col (2-i);
-   94   }
-   95   // If not basis only then compute the coefficients
-   96 
-   97   if (!basis_only_)
-   98     coefficients_ = eigenvectors_.transpose() * cloud_demean.topRows<3> ();
-   99   compute_done_ = true;
-  100   return (true);
-  101 }
-*/
-
-
-
-
-
 
 bool nav3d::Features3D::pose3dValid(geometry_msgs::PoseStamped* s)
 {
 
-	geometry_msgs::PoseStamped st = transformPoseTo(*s, robot_odom_frame_, false);
+	geometry_msgs::PoseStamped st = transformPoseTo(*s, robot_odom_frame_, false); //false
 	
 	pcl::PointXYZ sp;
 	sp.x = st.pose.position.x;
@@ -626,13 +679,14 @@ bool nav3d::Features3D::pose3dValid(geometry_msgs::PoseStamped* s)
 	
 	//int found2 = octree_->radiusSearch(sp, (robot_radius_*1.0), pointIdxRadiusSearch, pointRadiusSquaredDistance);
 	
+	float new_height = 0.0;
 	if ( found > 0 )
 	{
 		//printf("3dnav_features. pose3dValid. kdtree radiussearch found %i neighbors in the radius %.2f\n", found, (robot_radius_*1.5));
 		tree_mutex_.unlock();
 				
 		if(pointIdxRadiusSearch.size() < min_points_allowed_) {
-			printf("3dnav_features. pose3dValid. %u points found less than minimum: %i\n", (unsigned int)pointIdxRadiusSearch.size(), min_points_allowed_);
+			printf("%s. pose3dValid. %u points found. Minimum: %i\n", name_.c_str(), (unsigned int)pointIdxRadiusSearch.size(), min_points_allowed_);
 			return false;
 		}
 
@@ -641,7 +695,6 @@ bool nav3d::Features3D::pose3dValid(geometry_msgs::PoseStamped* s)
   		//patch->height = 1;
   		//patch->points.resize(patch->width * patch->height);
 
-		float new_height = 0.0;
 		int cont = 0;
 		for (size_t i=0; i < pointIdxRadiusSearch.size(); ++i)
 		{
@@ -655,12 +708,12 @@ bool nav3d::Features3D::pose3dValid(geometry_msgs::PoseStamped* s)
 		}
 		if(cont > 0) {
 			new_height = new_height/(float)cont;
-			s->pose.position.z = new_height;
+			//s->pose.position.z = new_height;
 		}
 	
 	} else {
 		tree_mutex_.unlock();
-		printf("nav_features3d. pose3dValid. kdtree radiussearch found %i neighbors in the radius %.2f\n", found, robot_radius_);
+		printf("%s. pose3dValid. kdtree found %i neighbors in the radius %.2f\n", name_.c_str(), found, robot_radius_);
 		return false;
 	}
 
@@ -713,16 +766,11 @@ bool nav3d::Features3D::pose3dValid(geometry_msgs::PoseStamped* s)
 		//printf("3dnav_features. pose3dValid. mean x:%.2f, y:%.2f, z:%.2f\n", mean[0], mean[1], mean[2]);
 
 	} catch(pcl::InitFailedException e)  {
-		ROS_WARN("nav_features3d. pose3dValid. Calculation of mean, eigenvectors and eigenvalues failed!");
+		ROS_WARN("%s. pose3dValid. Calculation of mean, eigenvectors and eigenvalues failed!", name_.c_str());
 		tree_mutex_.unlock();
 		return false;
 	}
 
-	//we can check how far is the centroid from the point sp
-	//float dx = sp.x - mean[0];
-	//float dy = sp.y - mean[1];
-	//float dz = sp.z - mean[2];
-	//float point_dist = sqrt(dx*dx + dy*dy + dz*dz); 
 
 
 	Eigen::Quaternion<float> q(evecs);
@@ -810,23 +858,29 @@ bool nav3d::Features3D::pose3dValid(geometry_msgs::PoseStamped* s)
 
 	//if(pitch > pitch_high_ || pitch < pitch_low_ || yaw > roll_high_ || yaw < roll_low_ || fabs(evals(2)) > roughness_) { 
 	//if(fabs(pitch) < (M_PI/4.0) || fabs(pitch) > (3.0*M_PI/4.0) || fabs(yaw) < (M_PI/4.0) || fabs(yaw) > (3.0*M_PI/4.0) || fabs(evals(2)) > roughness_) {  
-	if((fabs(pitch) > pitch_low_ && fabs(pitch) < pitch_high_) || (fabs(yaw) > roll_low_ && fabs(yaw) < roll_high_) || fabs(evals(2)) > roughness_) {
+	if((fabs(pitch) > pitch_low_ && fabs(pitch) < pitch_high_) || /*(fabs(yaw) > roll_low_ && fabs(yaw) < roll_high_) ||*/ fabs(evals(2)) > roughness_) {
 	//if( fabs(evals(2)) > roughness_) {
-		//printf("pose3d INVALID. pitch:%.2f, yaw:%.2f, r:%.2f, upper:%.2f, lower:%.2f, roughness:%.2f\n", fabs(pitch), fabs(yaw), fabs(evals(2)), pitch_high2_, pitch_low2_, roughness_);
+		//if(name_ == std::string("local_features_3d"))
+			//printf("%s. pose3d INVALID. p:%.2f, y:%.2f, r:%.2f, upper:%.2f, lower:%.2f\n", name_.c_str(), fabs(pitch), fabs(yaw), fabs(roll), pitch_high_, pitch_low_);
 		return false;
 	} else {
-		//printf("pose3d VALID. pitch:%.2f, yaw:%.2f, r:%.2f, upper:%.2f, lower:%.2f, roughness:%.2f\n", fabs(pitch), fabs(yaw), fabs(evals(2)), pitch_high2_, pitch_low2_, roughness_);
+		//if(name_ == std::string("local_features_3d"))
+			//printf("%s. pose3d VALID. p:%.2f, y:%.2f, r:%.2f, upper:%.2f, lower:%.2f\n", name_.c_str(), fabs(pitch), fabs(yaw), fabs(roll), pitch_high_, pitch_low_);
 		
 		
 		// mean[2] = height z in odom coordinates. I need to transform it to base frame and update this value in pose s.
-		geometry_msgs::PoseStamped meanpose;
-		meanpose.header.frame_id = rpose.header.frame_id;
-		meanpose.header.stamp = ros::Time::now();
-		meanpose.pose.position.x = mean[0];
-		meanpose.pose.position.y = mean[1];
-		meanpose.pose.position.z = mean[2];
-		meanpose.pose.orientation = rpose.pose.orientation;
-		geometry_msgs::PoseStamped sbase = transformPoseTo(meanpose, robot_base_frame_, false);
+		//geometry_msgs::PoseStamped samplepose;
+		//meanpose.header.frame_id = robot_odom_frame_; //rpose.header.frame_id;
+		//meanpose.header.stamp = ros::Time::now();
+		//meanpose.pose.position.x = st.pose.position.x; //mean[0];
+		//meanpose.pose.position.y = st.pose.position.y; //mean[1];
+		st.header.stamp = ros::Time::now();
+		if(new_height == 0.0)
+			st.pose.position.z = mean[2];
+		else
+			st.pose.position.z = new_height; //mean[2];
+		st.pose.orientation = rpose.pose.orientation;
+		geometry_msgs::PoseStamped sbase = transformPoseTo(st, s->header.frame_id, false); //robot_base_frame_
 		s->pose.position.z = sbase.pose.position.z;
 		
 		return true;
@@ -918,7 +972,7 @@ std::vector<float> nav3d::Features3D::getFeatures(geometry_msgs::PoseStamped* s)
 	
 	} else {
 		tree_mutex_.unlock();
-		printf("nav_features3d. getFeatures. kdtree radiussearch found %i neighbors in the radius %.2f\n", found, robot_radius_);
+		printf("%s. getFeatures. kdtree radiussearch found %i neighbors in the radius %.2f\n", name_.c_str(), found, robot_radius_);
 		return features;
 	}
 
@@ -961,7 +1015,7 @@ std::vector<float> nav3d::Features3D::getFeatures(geometry_msgs::PoseStamped* s)
 		tree_mutex_.unlock();
 
 	} catch(pcl::InitFailedException e)  {
-		ROS_WARN("nav_features3d. getFeatures. PCA failed!");
+		ROS_WARN("%s. getFeatures. PCA failed!", name_.c_str());
 		tree_mutex_.unlock();
 		return features;
 	}
@@ -1308,7 +1362,7 @@ float nav3d::Features3D::goalDistFeature(geometry_msgs::PoseStamped* s)  {
 
 
 void nav3d::Features3D::setWeights(vector<float> we) {
-	printf("nav_features3d. Setting weights: \n");
+	printf("%s. Setting weights: \n", name_.c_str());
 	w_.clear();
 	for(unsigned int i=0; i<we.size(); i++) 
 	{
@@ -1339,7 +1393,7 @@ float nav3d::Features3D::getCost(geometry_msgs::PoseStamped* s)
 	vector<float> features = getFeatures(s);
 
 	if(features[0] == 0.0) {
-		printf("nav_features3d. getCost. Returning maximum cost\n");
+		printf("%s. getCost. Returning maximum cost\n", name_.c_str());
 		return (1.0);
 	}
 	float cost = 0.0;
@@ -1374,13 +1428,13 @@ geometry_msgs::PoseStamped nav3d::Features3D::transformPoseTo(geometry_msgs::Pos
 	geometry_msgs::Quaternion q = in.pose.orientation;
 	if(!isQuaternionValid(q))
 	{
-		ROS_WARN("nav_features3d. transformPoseTo. Quaternion no valid. Creating new quaternion with yaw=0.0");
+		ROS_WARN("%s. transformPoseTo. Quaternion no valid. Creating new quaternion with yaw=0.0", name_.c_str());
 		in.pose.orientation = tf::createQuaternionMsgFromYaw(0.0);
 	}
 	try {
 		tf_listener_->transformPose(frame_out.c_str(), in, pose_out);
 	}catch (tf::TransformException ex){
-		ROS_WARN("nav_features3d. TransformException in method transformPoseTo. TargetFrame: %s : %s", frame_out.c_str(), ex.what());
+		ROS_WARN("%s. TransformException in method transformPoseTo. TargetFrame: %s : %s", name_.c_str(), frame_out.c_str(), ex.what());
 	}
 	//printf("Tranform pose. frame_in: %s, x:%.2f, y:%.2f, frame_out: %s, x:%.2f, y:%.2f\n", in.header.frame_id.c_str(), in.pose.position.x, in.pose.position.y, frame_out.c_str(), pose_out.pose.position.x, pose_out.pose.position.y);
 	return pose_out;
@@ -1392,16 +1446,16 @@ geometry_msgs::PoseStamped nav3d::Features3D::transformPoseTo(geometry_msgs::Pos
 bool nav3d::Features3D::isQuaternionValid(const geometry_msgs::Quaternion q){
     //first we need to check if the quaternion has nan's or infs
     if(!std::isfinite(q.x) || !std::isfinite(q.y) || !std::isfinite(q.z) || !std::isfinite(q.w)){
-		ROS_ERROR("nav_features3d. Quaternion has infs!!!!");
+		ROS_ERROR("%s. Quaternion has infs!!!!", name_.c_str());
 		return false;
     }
     if(std::isnan(q.x) || std::isnan(q.y) || std::isnan(q.z) || std::isnan(q.w)) {
-		ROS_ERROR("nav_features3d. Quaternion has nans !!!");
+		ROS_ERROR("%s. Quaternion has nans !!!", name_.c_str());
 		return false;
 	}
 	
 	if(std::fabs(q.x*q.x + q.y*q.y + q.z*q.z + q.w*q.w - 1) > 0.01) {
-		ROS_ERROR("nav_features3d. Quaternion malformed, magnitude: %.3f should be 1.0", (q.x*q.x + q.y*q.y + q.z*q.z + q.w*q.w));
+		ROS_ERROR("%s. Quaternion malformed, magnitude: %.3f should be 1.0", name_.c_str(), (q.x*q.x + q.y*q.y + q.z*q.z + q.w*q.w));
 		return false;
 	}
 
@@ -1409,7 +1463,7 @@ bool nav3d::Features3D::isQuaternionValid(const geometry_msgs::Quaternion q){
 
     //next, we need to check if the length of the quaternion is close to zero
     if(tf_q.length2() < 1e-6){
-      ROS_ERROR("nav_features3d. Quaternion has length close to zero... discarding.");
+      ROS_ERROR("%s. Quaternion has length close to zero... discarding.", name_.c_str());
       return false;
     }
 

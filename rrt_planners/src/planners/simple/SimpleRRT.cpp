@@ -151,7 +151,7 @@ std::vector<RRT::Node> RRT::SimpleRRT::solve(float secs)
 		solution = approxSolution;
 	
 	} else {
-		printf("\nRRT. Exlporation performed during %.6f secs\n", time);
+		printf("\nRRT. Planning performed during %.6f secs\n", time);
 	}
 	
 	

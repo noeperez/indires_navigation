@@ -90,6 +90,8 @@ void RRT_ros::RRT_ros_wrapper::setup()
 	private_nh.param<std::string>("robot_base_frame", robot_base_frame_, "base_link");
 	private_nh.param<std::string>("robot_odom_frame", robot_odom_frame_, "odom");
 	private_nh.param<std::string>("robot_pc_sensor_frame", robot_pc_sensor_frame_, "optical_frame");
+	
+	private_nh.param<std::string>("planning_frame", planning_frame_, "base_link");
 
 	
 	//RRT* 
@@ -270,7 +272,7 @@ void RRT_ros::RRT_ros_wrapper::setup()
 	inscribed_radius_  = (float)robot_radius;
 	circumscribed_radius_ = (float)robot_radius;
 	//printf("Before initializing checker!!\n");
-	checker_ = new RRT_ros::ValidityChecker3D(tf_, &footprint_, inscribed_radius_, size_x_, size_y_, size_z_, xyz_res_, dimensions_, distanceType_, robot_base_frame_, robot_odom_frame_);
+	checker_ = new RRT_ros::ValidityChecker3D(tf_, &footprint_, inscribed_radius_, size_x_, size_y_, size_z_, xyz_res_, dimensions_, distanceType_, planning_frame_);
 	//printf("After initializing checker!!\n");
 	
 
@@ -385,17 +387,17 @@ void RRT_ros::RRT_ros_wrapper::pcCallback(const sensor_msgs::PointCloud2ConstPtr
 {
 
 	//Transform the coordinates of the pointcloud from sensor frame to base robot frame 
-	sensor_msgs::PointCloud2 local;
-	if(pcl_ros::transformPointCloud(robot_base_frame_, *msg, local, *tf_))
-	{
+	//sensor_msgs::PointCloud2 local;
+	//if(pcl_ros::transformPointCloud(robot_base_frame_, *msg, local, *tf_))
+	//{
 		pc_mutex_.lock();
-		//pc_ = *msg;
-		pc_ = local;
+		pc_ = *msg;
+		//pc_ = local;
 		pc_mutex_.unlock();
-		//setSamplingSpace(msg);
-	}
-	else 
-		ROS_WARN("RRT_ros_wrapper. pcCallback. Error transforming received cloud");
+		//printf("rrt_wrapper. pcCallback. pc received\n");
+	//}
+	//else 
+	//	ROS_WARN("RRT_ros_wrapper. pcCallback. Error transforming received cloud");
 
 }
 
@@ -406,6 +408,15 @@ void RRT_ros::RRT_ros_wrapper::setSamplingSpace()
 	sensor_msgs::PointCloud2 pc = pc_;
 	pc_mutex_.unlock();
 	
+	//printf("rrt_wrapper. setSamplingSpace. SETTING SAMPLING SPACE!!!!\n");
+	
+	if(pc.header.frame_id != planning_frame_)
+	{
+		sensor_msgs::PointCloud2 local;
+		if(!pcl_ros::transformPointCloud(planning_frame_, pc, local, *tf_))
+			ROS_ERROR("RRT_ros_wrapper. setSamplingSpace. Error transforming received cloud");
+		pc = local;
+	}
 	//pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
     //pcl::fromROSMsg(pc, *cloud);
 	//std::vector<pcl::PointXYZ> data = cloud->points;
@@ -433,252 +444,6 @@ void RRT_ros::RRT_ros_wrapper::setSamplingSpace()
 	rrt_planner_->setSamplingSpace(&pc_rrt);
 
 }
-
-
-/**
- * Only in case of using the RRT planner as a local controller
- * */
-/*void upo_RRT_ros::RRT_ros_wrapper::setup_controller(float controller_freq, float path_stddev, int planner_type)
-{
-	
-	ros::NodeHandle private_nh("~/RRT_ros_wrapper");
-
-
-	switch(planner_type)
-	{
-		case 1:  //Kino RRT	
-			rrt_planner_type_ = 3;
-			break;
-			
-		case 2: //kino RRT*
-			rrt_planner_type_ = 4;
-			break;
-			
-		case 3: //kino simplified RRT*
-			rrt_planner_type_ = 5;
-			break;
-			
-		default:
-			rrt_planner_type_ = 3;
-	}
-	
-      	
-   	//private_nh.param<bool>("use_fc_in_costmap", use_fc_costmap_, false); 
-	
-	 
-	
- 	solve_time_ = 1/controller_freq;
- 	
- 	double aux;
-	private_nh.param<double>("rrt_goal_bias", aux, 0.1);
-	goal_bias_ = (float)aux;
-	
-	private_nh.param<double>("rrt_max_insertion_dist", aux, 0.2);
-	max_range_ = (float) aux;
-	
-	double robot_radius;
-	private_nh.param<double>("robot_radius", robot_radius, 0.4);
-	
-	//RRT* 
-	if(rrt_planner_type_ == 2 || rrt_planner_type_ >= 4) {
-		private_nh.param<bool>("rrtstar_use_k_nearest", rrtstar_use_k_nearest_, true);
-		rrtstar_first_path_biasing_ = false;
-		rrtstar_first_path_bias_ = 0.0;
-		rrtstar_first_path_stddev_bias_ = 0.0;
-		private_nh.param<double>("rrtstar_rewire_factor", aux, 1.1);
-		rrtstar_rewire_factor_ = (float)aux;
-	}
-	
-	
-	//if RRT or RRT* are kinodynamics
-	//float kino_linAcc, kino_angAcc;
-	//int kino_minControlSteps, kino_maxControlSteps;
-	//int kino_steeringType;
-	if(rrt_planner_type_ > 2) {
-		
-		private_nh.param<double>("kino_time_step", aux, 0.067);
-		kino_timeStep_ = (float)aux;
-		private_nh.param<int>("kino_min_control_steps", kino_minControlSteps_, 5);
-		private_nh.param<int>("kino_max_control_steps", kino_maxControlSteps_, 30);
-		//Robot accelerations
-		private_nh.param<double>("kino_linear_acc", aux, 0.6);
-		kino_linAcc_ = (float)aux;
-		private_nh.param<double>("kino_angular_acc", aux, 1.57);
-		kino_angAcc_ = (float)aux;
-		private_nh.param<int>("kino_steering_type", kino_steeringType_, 1); 
-		
-		
-	}
-	
-	//Steering parameters for kinodynamic planning
-	private_nh.param<double>("kino_steer_kp", aux, 0.5);
-	float kino_steer_kp = (float)aux;
-	private_nh.param<double>("kino_steer_kv", aux, 3.0);
-	float kino_steer_kv = (float)aux;
-	private_nh.param<double>("kino_steer_ka", aux, 2.0);
-	float kino_steer_ka = (float)aux;
-	private_nh.param<double>("kino_steer_ko", aux, 0.25);
-	float kino_steer_ko = (float)aux;
-	
-
-	//RRT State Space
-	private_nh.param<int>("rrt_dimensions", dimensions_, 3);
-  	private_nh.param<double>("rrt_size_x", aux, 5.0);
-  	size_x_ = (float)aux;
-	private_nh.param<double>("rrt_size_y", aux, 5.0);
-	size_y_ = (float)aux;
-	private_nh.param<double>("rrt_xy_resolution", aux, 0.1);
-	xy_res_ = (float)aux;
-	private_nh.param<double>("rrt_yaw_resolution", aux, 0.02);
-	yaw_res_ = (float)aux;
-	private_nh.param<double>("rrt_min_linear_vel", aux, 0.0);
-	min_lin_vel_ = (float)aux;
-	private_nh.param<double>("rrt_max_linear_vel", aux, 0.5);
-	max_lin_vel_ = (float)aux;
-	private_nh.param<double>("rrt_lin_vel_resolution", aux, 0.05);
-	lin_vel_res_ = (float)aux;
-	private_nh.param<double>("rrt_max_angular_vel", aux, 0.5);
-	max_ang_vel_ = (float)aux;
-	private_nh.param<double>("rrt_min_angular_vel", aux, 0.3);
-	min_ang_vel_ = (float)aux;
-	private_nh.param<double>("rrt_ang_vel_resolution", aux, 0.1);
-	ang_vel_res_ = (float)aux;
-	private_nh.param<double>("rrt_goal_xy_tol", aux, 0.15);
-	goal_xy_tol_ = (float)aux;
-	private_nh.param<double>("rrt_goal_th_tol", aux, 0.15);
-	goal_th_tol_ = (float)aux;
-	private_nh.param<int>("rrt_nn_type", nn_params_, 1);
-	//int distanceType;
-	private_nh.param<int>("distance_type", distanceType_, 1);
-	private_nh.param<int>("motion_cost_type", motionCostType_, 1);
-	
-	//Visualization
-  	private_nh.param<bool>("visualize_rrt_tree", visualize_tree_, false);
-   	private_nh.param<bool>("visualize_nav_costmap", visualize_costmap_, false);
-	private_nh.param<bool>("show_rrt_statistics", show_statistics_, false);
-	//private_nh.param<double>("equal_path_percentage", aux, 0.5);
-	//equal_path_percentage_ = (float)aux;
-	private_nh.param<double>("rrt_interpolate_path_dist", aux, 0.05);
-	interpolate_path_distance_ = (float)aux;
-	private_nh.param<bool>("show_intermediate_states", show_intermediate_states_, false);
-	
-	//path_smoothing
-	private_nh.param<bool>("path_smoothing", path_smoothing_, true);
-	private_nh.param<int>("smoothing_samples", smoothing_samples_, 10);
-	
-	
-	//private_nh.param<bool>("gmm_biasing", gmm_biasing_, false);
-	//private_nh.param<double>("gmm_bias", aux, 0.95);
-	//gmm_bias_ = (float)aux;
-	
-	
-	//if the planner is an RRT, the nav costmap can not be visualized
-	if(rrt_planner_type_ == 1 || rrt_planner_type_ == 3)
-		visualize_costmap_ = false;
-		
-	ros::NodeHandle n;
-	if(visualize_costmap_) {
-		costmap_pub_ = n.advertise<nav_msgs::OccupancyGrid>("rrt_costmap", 1);
-	}
-	if(visualize_tree_) {
-		tree_pub_ = n.advertise<visualization_msgs::Marker>("rrt_tree", 1);
-	}
-	
-	//gmm_costmap_pub_ = n.advertise<nav_msgs::OccupancyGrid>("gmm_costmap", 5);
-	
-	
-	rrt_goal_pub_ = n.advertise<geometry_msgs::PoseStamped>("rrt_goal", 1);
-		
-	local_goal_pub_ = n.advertise<visualization_msgs::Marker>("rrt_goal_marker", 1);
-	path_points_pub_ = n.advertise<visualization_msgs::Marker>("rrt_path_points", 1);
-	path_interpol_points_pub_ = n.advertise<visualization_msgs::Marker>("rrt_path_interpol_points", 1);
-
-	if(size_x_ != size_y_) {
-		ROS_ERROR("X size and Y size of the State Space has to be equal!!!");
-		return;
-	}
-
-
-	//GMM sampling service client
-	//gmm_samples_client_ = n.serviceClient<gmm_sampling::GetApproachGMMSamples>("/gmm_sampling/GetApproachGMMSamples");
-	//GMM probs service client
-	//gmm_probs_client_ = n.serviceClient<gmm_sampling::GetApproachGMMProbs>("/gmm_sampling/GetApproachGMMProbs");
-
-
-	//This is not working properly-------------
-	//double irad, crad;
-	//costmap_2d::calculateMinAndMaxDistances(footprint_, irad, crad);
-	//inscribed_radius_ = irad;
-	//circumscribed_radius_ = crad;
-	//------------------------------------------
-	inscribed_radius_  = (float)robot_radius;
-	circumscribed_radius_ = (float)robot_radius;
-
-	checker_ = new ValidityChecker(use_fc_costmap_, tf_, &footprint_, inscribed_radius_, size_x_, size_y_, xy_res_, dimensions_, distanceType_);
-	
-	switch(rrt_planner_type_)
-	{
-	
-		// ----- kinodynamic RRT --------------------
-		case 3:
-			printf("\n-------- Using Kinodynamic RRT planner ----------\n");
-			rrt_planner_ = new upo_RRT::RRT();
-			rrt_planner_->as<upo_RRT::RRT>()->setTimeStep(kino_timeStep_);
-			rrt_planner_->as<upo_RRT::RRT>()->setControlSteps(kino_minControlSteps_, kino_maxControlSteps_);
-			rrt_planner_->as<upo_RRT::RRT>()->setRobotAcc(kino_linAcc_, kino_angAcc_);
-			break;
-			
-		// ----- kinodynamic RRT* --------------------
-		case 4:
-			printf("\n-------- Using Kinodynamic RRT* planner ----------\n");
-			rrt_planner_ = new upo_RRT::RRTstar();
-			rrt_planner_->as<upo_RRT::RRTstar>()->setMaxRange(max_range_);
-			rrt_planner_->as<upo_RRT::RRTstar>()->setTimeStep(kino_timeStep_);
-			rrt_planner_->as<upo_RRT::RRTstar>()->setControlSteps(kino_minControlSteps_, kino_maxControlSteps_);
-			rrt_planner_->as<upo_RRT::RRTstar>()->setRobotAcc(kino_linAcc_, kino_angAcc_);
-			rrt_planner_->as<upo_RRT::RRTstar>()->set_useKnearest(rrtstar_use_k_nearest_);
-			rrt_planner_->as<upo_RRT::RRTstar>()->set_useFirstPathBiasing(rrtstar_first_path_biasing_);
-			rrt_planner_->as<upo_RRT::RRTstar>()->setRewireFactor(rrtstar_rewire_factor_);
-			rrt_planner_->as<upo_RRT::RRTstar>()->setSteeringType(kino_steeringType_);
-			rrt_planner_->as<upo_RRT::RRTstar>()->setMotionCostType(motionCostType_); 
-			break;
-			
-		// ----- kinodynamic simplified RRT* --------------------
-		case 5:
-			printf("\n-------- Using Kinodynamic simplified RRT* planner ----------\n");
-			rrt_planner_ = new upo_RRT::HalfRRTstar();
-			rrt_planner_->as<upo_RRT::HalfRRTstar>()->setMaxRange(max_range_);
-			rrt_planner_->as<upo_RRT::HalfRRTstar>()->setTimeStep(kino_timeStep_);
-			rrt_planner_->as<upo_RRT::HalfRRTstar>()->setControlSteps(kino_minControlSteps_, kino_maxControlSteps_);
-			rrt_planner_->as<upo_RRT::HalfRRTstar>()->setRobotAcc(kino_linAcc_, kino_angAcc_);
-			rrt_planner_->as<upo_RRT::HalfRRTstar>()->set_useKnearest(rrtstar_use_k_nearest_);
-			rrt_planner_->as<upo_RRT::HalfRRTstar>()->set_useFirstPathBiasing(rrtstar_first_path_biasing_);
-			rrt_planner_->as<upo_RRT::HalfRRTstar>()->setRewireFactor(rrtstar_rewire_factor_);
-			rrt_planner_->as<upo_RRT::HalfRRTstar>()->setSteeringType(kino_steeringType_);
-			rrt_planner_->as<upo_RRT::HalfRRTstar>()->setMotionCostType(motionCostType_); 
-			break;
-	}
-	
-	
-	rrt_planner_->setup(checker_, nn_params_, dimensions_, size_x_, size_y_, xy_res_, yaw_res_, min_lin_vel_, max_lin_vel_, lin_vel_res_, max_ang_vel_, ang_vel_res_, 
-		kino_steer_kp, kino_steer_kv, kino_steer_ka, kino_steer_ko);
-				
-	rrt_planner_->setGoalBias(goal_bias_);
-	rrt_planner_->setGoalTolerance(goal_xy_tol_, goal_th_tol_);
-	rrt_planner_->setStoreTree(visualize_tree_);
-	
-	//Full path biasing
-	full_path_biasing_ = true;
-	full_path_stddev_ = path_stddev;
-	rrt_planner_->setFullBiasing(full_path_biasing_);
-	rrt_planner_->setPathBias(1.0);
-	rrt_planner_->setPathBias_stddev(full_path_stddev_);
-	//rrt_planner_->setGoalBias(0.0);
-	
-	//Planning server
-	plan_srv_ = private_nh.advertiseService("makeRRTPlan", &upo_RRT_ros::RRT_ros_wrapper::makePlanService, this);
-	
-}*/
 
 
 
@@ -816,8 +581,8 @@ std::vector<geometry_msgs::PoseStamped> RRT_ros::RRT_ros_wrapper::RRT_plan(bool 
 	rrt_planner_->setExploration(exploration);
 	RRT::State* g = NULL;
 	
-	geometry_msgs::PoseStamped st = checker_->transformPoseTo(start, robot_base_frame_, false);
-	geometry_msgs::PoseStamped gl = checker_->transformPoseTo(goal, robot_base_frame_, false);
+	geometry_msgs::PoseStamped st = checker_->transformPoseTo(start, planning_frame_, false); //true
+	geometry_msgs::PoseStamped gl; // = checker_->transformPoseTo(goal, planning_frame_, false);
 	
 	if(exploration)
 	{
@@ -840,6 +605,8 @@ std::vector<geometry_msgs::PoseStamped> RRT_ros::RRT_ros_wrapper::RRT_plan(bool 
 		
 		//geometry_msgs::PoseStamped p = req.goal;
 		//printf("makePlanService. x:%.2f, y:%.2f, z:%.2f, w:%.2f\n", p.pose.orientation.x, p.pose.orientation.y, p.pose.orientation.z, p.pose.orientation.w);
+		
+		gl = checker_->transformPoseTo(goal, planning_frame_, false);
 		
 		//printf("exploration = %i", (int)exploration);
 		if(!rrt_planner_->setStartAndGoal(st.pose.position.x, st.pose.position.y, st.pose.position.z, tf::getYaw(start.pose.orientation), gl.pose.position.x, gl.pose.position.y, gl.pose.position.z, tf::getYaw(gl.pose.orientation))){
@@ -870,7 +637,7 @@ std::vector<geometry_msgs::PoseStamped> RRT_ros::RRT_ros_wrapper::RRT_plan(bool 
 		
 		//visualize rrt goal
 		visualization_msgs::Marker marker;
-		marker.header.frame_id = robot_base_frame_; //robot_base_frame_ = "/base_link"
+		marker.header.frame_id = planning_frame_; //robot_base_frame_ = "/base_link"
 		marker.header.stamp = ros::Time::now();
 		marker.ns = "basic_shapes";
 		marker.id = 0;
@@ -964,7 +731,7 @@ std::vector<geometry_msgs::PoseStamped> RRT_ros::RRT_ros_wrapper::RRT_plan(bool 
 	// Build the path in ROS format
 	rrt_plan_.clear();
 	geometry_msgs::PoseStamped pose;
-	pose.header.frame_id = robot_base_frame_;
+	pose.header.frame_id = planning_frame_;
 	pose.header.stamp = time;
 	int cont = 0;
 	for(int i=path.size()-1; i>=0; --i)
@@ -1030,35 +797,6 @@ std::vector<geometry_msgs::PoseStamped> RRT_ros::RRT_ros_wrapper::RRT_plan(bool 
 		printf("Approximated Total Path Time: %.3f secs\n", kino_timeStep_*cont);
 	}
 	
-	
-
-	//Visualize the tree nodes of the resulting path
-	/*visualization_msgs::Marker points;
-	  
-	points.header.frame_id = robot_base_frame_; 
-	points.header.stamp = time;
-	points.ns = "basic_shapes";
-	points.id = 0;
-	points.type = visualization_msgs::Marker::SPHERE_LIST;
-	points.action = visualization_msgs::Marker::ADD;
-	points.pose.position.x = 0.0;
-	points.pose.position.y = 0.0;
-	points.pose.position.z = 0.1; 
-	points.scale.x = 0.12;
-	points.scale.y = 0.12;
-	points.color.r = 0.0f;
-	points.color.g = 1.0f;
-	points.color.b = 0.0f;
-	points.color.a = 1.0;
-	points.lifetime = ros::Duration();
-		
-	for(unsigned int i=0; i<rrt_plan_.size(); i++)
-	{
-		geometry_msgs::Point p = rrt_plan_[i].pose.position;
-		points.points.push_back(p);
-	}
-	path_points_pub_.publish(points);
-	*/
 
 	if(visualize_tree_) 
 		visualizeTree(time);
@@ -1140,6 +878,7 @@ bool RRT_ros::RRT_ros_wrapper::makePlanService(rrt_planners::MakePlan::Request &
 		goal.orientation = p.pose.orientation;
 	}*/
 	
+	/*
 	geometry_msgs::PoseStamped start;
 	start.header.stamp = ros::Time::now();
 	start.header.frame_id = "base_link";
@@ -1147,9 +886,28 @@ bool RRT_ros::RRT_ros_wrapper::makePlanService(rrt_planners::MakePlan::Request &
 	start.pose.position.y = 0.0;
 	start.pose.position.z = 0.0;
 	start.pose.orientation = tf::createQuaternionMsgFromYaw(0.0);
-	
+	*/
 	//goal.theta = tf::getYaw(p.pose.orientation);	
-
+	
+	//OBTAIN THE ROBOT POSE IN PLANNING_FRAME
+	tf::StampedTransform transform;
+	try {
+		tf_->waitForTransform(planning_frame_, robot_base_frame_, ros::Time(0), ros::Duration(2.0) );
+		tf_->lookupTransform(planning_frame_, robot_base_frame_, ros::Time(0), transform);
+	} catch (tf::TransformException ex) {
+		ROS_ERROR("MakePlanService. Error getting robot pose in planning frame: %s",ex.what());
+		return false;
+	}
+	geometry_msgs::PoseStamped start;
+	start.header.stamp = ros::Time::now();
+	start.header.frame_id = planning_frame_;
+	start.pose.position.x = transform.getOrigin().x();
+	start.pose.position.y = transform.getOrigin().y();
+	start.pose.position.z = transform.getOrigin().z();
+	start.pose.orientation.x = transform.getRotation().x();   //tf::createQuaternionMsgFromYaw(0.0);
+	start.pose.orientation.y = transform.getRotation().y();
+	start.pose.orientation.z = transform.getRotation().z();
+	start.pose.orientation.w = transform.getRotation().w();
 	
 	std::vector<geometry_msgs::PoseStamped> path = RRT_plan(explore, start, goal, 0.0, 0.0);
 	
@@ -1159,7 +917,7 @@ bool RRT_ros::RRT_ros_wrapper::makePlanService(rrt_planners::MakePlan::Request &
 	{
 		visualization_msgs::Marker points;
 		  
-		points.header.frame_id = robot_base_frame_; 
+		points.header.frame_id = planning_frame_; 
 		points.header.stamp = ros::Time::now();
 		points.ns = "rrt_path";
 		points.id = 0;
@@ -1687,7 +1445,7 @@ void RRT_ros::RRT_ros_wrapper::visualizeTree(ros::Time t)
 	std::vector<RRT::State> tree_states = rrt_planner_->getTree();
 		
 	visualization_msgs::Marker edges;
-	edges.header.frame_id = robot_base_frame_;
+	edges.header.frame_id = planning_frame_;
 	edges.header.stamp = t;
 	edges.ns = "rrt_tree";
 	edges.id = 0;
@@ -1735,7 +1493,7 @@ void RRT_ros::RRT_ros_wrapper::visualizeLeaves(ros::Time t)
 	std::vector<RRT::Node> leaves = rrt_planner_->getLeaves();
 		
 	visualization_msgs::Marker l;
-	l.header.frame_id = robot_base_frame_;
+	l.header.frame_id = planning_frame_;
 	l.header.stamp = t;
 	l.ns = "rrt_tree_leaves";
 	l.id = 2;
@@ -1819,7 +1577,7 @@ void RRT_ros::RRT_ros_wrapper::publish_feature_costmap(ros::Time t)
 					//tf::quaternionTFToMsg(transform.getRotation(), robotp.pose.orientation);
 					robotp.pose.orientation = tf::createQuaternionMsgFromYaw(tf::getYaw(transform.getRotation()));
 					
-					geometry_msgs::PoseStamped robot_frame_pose = checker_->transformPoseTo(robotp, robot_base_frame_, true); //true
+					geometry_msgs::PoseStamped robot_frame_pose = checker_->transformPoseTo(robotp, planning_frame_, true); //true  robot_base_frame
 					RRT::State* s = new RRT::State(robot_frame_pose.pose.position.x, robot_frame_pose.pose.position.y, 0.0, tf::getYaw(robot_frame_pose.pose.orientation)); 
 					cost = checker_->getCost(s);
 					//printf("publish_feature_map. x:%.2f, y:%.2f, cost:%.2f\n", robotp.pose.position.x, robotp.pose.position.y, cost);
@@ -2137,8 +1895,8 @@ float RRT_ros::RRT_ros_wrapper::get_path_cost(geometry_msgs::PoseStamped* goal, 
 	geometry_msgs::PoseStamped mygoal = *goal;
 	//Set the goal
 	std::string goal_frame = goal->header.frame_id;
-	if(goal_frame.compare(robot_base_frame_.c_str()) != 0) // && goal_frame.compare("indires_rover/base_link") != 0)
-		mygoal = checker_->transformPoseTo(mygoal, robot_base_frame_, false);
+	if(goal_frame.compare(planning_frame_.c_str()) != 0) // && goal_frame.compare("indires_rover/base_link") != 0)
+		mygoal = checker_->transformPoseTo(mygoal, planning_frame_, false);
 	RRT::State* g;
 	g = new RRT::State(mygoal.pose.position.x, mygoal.pose.position.y, mygoal.pose.position.z, tf::getYaw(mygoal.pose.orientation));
 	checker_->setGoal(g);
@@ -2147,12 +1905,12 @@ float RRT_ros::RRT_ros_wrapper::get_path_cost(geometry_msgs::PoseStamped* goal, 
 	  {
 			//We have to transform the coordinates to robot frame (/base_link)
 			geometry_msgs::PoseStamped robot_pose = path->at(i);
-			if(robot_pose.header.frame_id.compare(robot_base_frame_.c_str()) != 0) // && robot_pose.header.frame_id.compare("/indires_rover/base_link") != 0)
-				robot_pose = checker_->transformPoseTo(robot_pose, robot_base_frame_, false);
+			if(robot_pose.header.frame_id.compare(planning_frame_.c_str()) != 0) // && robot_pose.header.frame_id.compare("/indires_rover/base_link") != 0)
+				robot_pose = checker_->transformPoseTo(robot_pose, planning_frame_, false);
 
 			geometry_msgs::PoseStamped robot_pose2 = path->at(i+1);
-			if(robot_pose2.header.frame_id.compare(robot_base_frame_.c_str()) != 0) // && robot_pose2.header.frame_id.compare("/indires_rover/base_link") != 0)
-				robot_pose2 = checker_->transformPoseTo(robot_pose2, robot_base_frame_, false);
+			if(robot_pose2.header.frame_id.compare(planning_frame_.c_str()) != 0) // && robot_pose2.header.frame_id.compare("/indires_rover/base_link") != 0)
+				robot_pose2 = checker_->transformPoseTo(robot_pose2, planning_frame_, false);
 
 			double dx = robot_pose.pose.position.x - robot_pose2.pose.position.x;
 			double dy = robot_pose.pose.position.y - robot_pose2.pose.position.y;

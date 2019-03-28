@@ -1,0 +1,24 @@
+
+<launch>
+
+	<!--include file=file="$(find rrt_planners)/launch/rrt_planners.launch" /-->
+	<!--
+	<node pkg="rrt_planner_plugin" type="rrt_planner_move_base" name="rrt_planner_move_base" output="screen" >
+		<rosparam file="$(find rrt_planners)/launch/navigation_params.yaml" command="load" />
+	</node>
+	-->
+	<!-- launch-prefix="xterm -e gdb (doble hyphen)args"-->
+	 <node pkg="adapted_move_base" type="adapted_move_base_node" name="adapted_move_base_node" output="screen" respawn="true" >
+
+		<!--remap from="/upo_navigation_simple/goal" to="/move_base_simple/goal" /-->
+		<rosparam file="$(find adapted_move_base)/launch/params/navigation_params.yaml" command="load"  />
+		<!--rosparam file="$(find adapted_move_base)/params/costmap_common_params.yaml" command="load" ns="global_costmap" /-->
+		<!--rosparam file="$(find adapted_move_base)/launch/params/costmap_common_params.yaml" command="load" ns="local_costmap" /-->
+		<!--rosparam file="$(find adapted_move_base)/launch/params/local_costmap_params.yaml" command="load"  /-->
+		<!--rosparam file="$(find adapted_move_base)/params/global_costmap_params.yaml" command="load" /-->
+
+	</node>
+
+
+
+</launch>

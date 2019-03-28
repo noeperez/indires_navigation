@@ -195,6 +195,7 @@ namespace RRT_ros {
 			std::string						robot_base_frame_;
 			std::string						robot_odom_frame_;
 			std::string						robot_pc_sensor_frame_;
+			std::string						planning_frame_;
 			
 			//RRT
 			RRT::Planner*					rrt_planner_;

@@ -85,6 +85,8 @@ RRT::StateSpace::StateSpace(StateChecker* stateChecker, unsigned int dim, unsign
 	goal_th_tolerance_ = 0.15;
 	
 	unit_ball_measure_ = calculeUnitBallMeasure(dimensions_, 1.0);
+	
+	
 }
 		
 RRT::StateSpace::~StateSpace(){
@@ -106,20 +108,24 @@ float RRT::StateSpace::getUnitBallMeasure() {
 
 RRT::State* RRT::StateSpace::sampleState()
 {
+	if(!start_) {
+		return NULL;
+	}
+	
 	if(use_external_samples_)
 		return sampleStateExternal();
 
 	float x=0.0, y=0.0, z=0.0, yaw=0.0, lv =0.0, av=0.0;
-	x = random_.uniformReal(-size_x_, size_x_);
-	y = random_.uniformReal(-size_y_, size_y_);
+	x = random_.uniformReal(start_->getX()-size_x_, start_->getX()+size_x_);
+	y = random_.uniformReal(start_->getY()-size_y_, start_->getY()+size_y_);
 	if(dimensions_ == 3) {
 		if(type_ == 1)
 			yaw = random_.uniformReal(-PI, PI);
 		else
-			z = random_.uniformReal(-size_z_, size_z_);
+			z = random_.uniformReal(start_->getZ()-size_z_, start_->getZ()+size_z_);
 	} 
 	if(dimensions_ > 3) {
-		z = random_.uniformReal(-size_z_, size_z_);
+		z = random_.uniformReal(start_->getZ()-size_z_, start_->getZ()+size_z_);
 		lv = random_.uniformReal(min_lin_vel_, max_lin_vel_);
 		av = random_.uniformReal(-max_ang_vel_, max_ang_vel_);
 	}
@@ -137,9 +143,9 @@ RRT::State* RRT::StateSpace::sampleStateFree()
 	State* sample;
 	do
 	{
-		x = random_.uniformReal(-size_x_, size_x_);
-		y = random_.uniformReal(-size_y_, size_y_);
-		z = random_.uniformReal(-size_z_, size_z_);
+		x = random_.uniformReal(start_->getX()-size_x_, start_->getX()+size_x_);
+		y = random_.uniformReal(start_->getY()-size_y_, start_->getY()+size_y_);
+		z = random_.uniformReal(start_->getZ()-size_z_, start_->getZ()+size_z_);
 		sample = new RRT::State(x, y, z);
 	} while(!isStateValid(sample));
 	if(dimensions_ == 2)
@@ -249,8 +255,6 @@ RRT::State* RRT::StateSpace::samplePathBiasing(std::vector<State>* path, float s
 
 RRT::State* RRT::StateSpace::sampleStateExternal()
 {
-	
-	//Aquí se podría intentar filtrar por altura respecto al robot!!!!!!!!!
 	ext_mutex_.lock();
 	if(!external_samples_.empty())
 	{

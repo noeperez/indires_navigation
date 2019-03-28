@@ -93,11 +93,11 @@ namespace RRT
 			bool setGoal(float goal_x, float goal_y, float goal_z, float goal_h);
 			
 			
-			bool setStoreTree(bool s){
+			void setStoreTree(bool s){
 				storeTree_ = s;
 			}
 			
-			bool setExploration(bool e) {
+			void setExploration(bool e) {
 				exploration_ = e;
 			}
 			

@@ -46,7 +46,7 @@ namespace RRT_ros
 	{
 		public:
 		
-		ValidityChecker3D(tf::TransformListener* tf, std::vector<geometry_msgs::Point>* footprint, float insc_radius, float size_x, float size_y, float size_z, float res, unsigned int dimensions, int distType, std::string robot_base_frame, std::string robot_odom_frame); 
+		ValidityChecker3D(tf::TransformListener* tf, std::vector<geometry_msgs::Point>* footprint, float insc_radius, float size_x, float size_y, float size_z, float res, unsigned int dimensions, int distType, std::string planning_frame); 
 
 		virtual ~ValidityChecker3D();
 		
@@ -68,6 +68,7 @@ namespace RRT_ros
 		RRT::Node* evaluate_exploration(std::vector<RRT::Node*>* leaves) const;
 		
 		
+		inline std::string getPlanningFrame() {return planning_frame_; }
 		
 		void setGoal(RRT::State* g) { 
 			geometry_msgs::PoseStamped goal;
@@ -76,7 +77,7 @@ namespace RRT_ros
 				features_->setGoal(goal);
 				return;
 			}
-			goal.header.frame_id = robot_base_frame_;
+			goal.header.frame_id = planning_frame_;
 			goal.header.stamp = ros::Time();
 			goal.pose.position.x = g->getX();
 			goal.pose.position.y = g->getY();
@@ -124,8 +125,8 @@ namespace RRT_ros
 		
 		ros::Time							time_;
 
-		std::string							robot_base_frame_;
-		std::string							robot_odom_frame_;
+		std::string							planning_frame_;
+		//std::string							robot_odom_frame_;
 		
 		ros::Publisher						explore_pub_;
 		

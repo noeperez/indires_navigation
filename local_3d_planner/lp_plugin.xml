@@ -1,0 +1,7 @@
+<library path="lib/liblocal_3d_planner_ros">
+    <class name="local_3d_planner/Local3DPlannerROS" type="local_3d_planner::Local3DPlannerROS" base_class_type="nav_core::BaseLocalPlanner">
+    <description>
+      A implementation of a simple local controller to follow a pre-defined path in 3D dimensions based on pointcloud as sensory input.
+    </description>
+  </class>
+</library>

@@ -1,6 +1,6 @@
 
-#ifndef NAV_FEATURES_
-#define NAV_FEATURES_
+//#ifndef NAV_FEATURES_
+//#define NAV_FEATURES_
 
 #include <math.h>
 #include <vector>
@@ -114,15 +114,15 @@ namespace nav3d {
 
 			Features3D();
 			
-			Features3D(tf::TransformListener* tf, float size_x, float size_y, float size_z);
+			Features3D(std::string name, tf::TransformListener* tf, float size_x, float size_y, float size_z);
 			
 			//NavFeatures(tf::TransformListener* tf, const costmap_2d::Costmap2D* loc_costmap, const costmap_2d::Costmap2D* glob_costmap, std::vector<geometry_msgs::Point>* footprint, float insc_radius, float size_x, float size_y);
 
-			Features3D(tf::TransformListener* tf, vector<geometry_msgs::Point>* footprint, float size_x, float size_y, float size_z);
+			Features3D(std::string name, tf::TransformListener* tf, vector<geometry_msgs::Point>* footprint, float size_x, float size_y, float size_z);
 
 			~Features3D();
 
-			void setParams();
+			void setParams(std::string name);
 
 			bool poseValid(geometry_msgs::PoseStamped* s);
 			//bool poseValid2(geometry_msgs::PoseStamped* s);
@@ -136,7 +136,8 @@ namespace nav3d {
 			
 			
 			std::vector<std::vector<int> > clusterize_leaves(std::vector<geometry_msgs::Point>* points, float radius);
-			std::vector<float> evaluate_leaves(std::vector<geometry_msgs::Point>* points, float radius);
+			std::vector<float> evaluate_leaves(std::vector<geometry_msgs::Point>* points, std::string frame, float radius);
+			float evaluate_leaf(geometry_msgs::Point* p, float rrt_cost, std::string frame, float radius);
 			float no_return_cost(geometry_msgs::PoseStamped* p);
 			
 
@@ -175,6 +176,14 @@ namespace nav3d {
 			void setWeights(std::vector<float> we);
 
 			void setGoal(geometry_msgs::PoseStamped g); 
+			
+			inline std::string getRobotBaseFrame() {
+				return robot_base_frame_;
+			};
+			
+			inline std::string getRobotOdomFrame() {
+				return robot_odom_frame_;
+			};
 
 			//void setObstacles(sensor_msgs::PointCloud2 obs);
 
@@ -194,6 +203,8 @@ namespace nav3d {
 		private:
 
 			tf::TransformListener* 				tf_listener_;
+			
+			std::string							name_;
 		
 			ros::Subscriber 					cloud_sub_;
 			sensor_msgs::PointCloud2 			cloud_;
@@ -218,13 +229,13 @@ namespace nav3d {
 			//pcl::PCA<pcl::PointXYZ>*			pca_;
 
 			double								pitch_high_;
-			double								pitch_high2_;
+			//double								pitch_high2_;
 			double								pitch_low_;
-			double								pitch_low2_;
+			//double								pitch_low2_;
 			double 								roll_high_;
-			double 								roll_high2_;
+			//double 								roll_high2_;
 			double 								roll_low_;
-			double 								roll_low2_;
+			//double 								roll_low2_;
 			double								roughness_;
 			int 								min_points_allowed_;
 
@@ -237,6 +248,7 @@ namespace nav3d {
 			std::string							robot_base_frame_;
 			std::string							robot_odom_frame_;
 			std::string							robot_odom_topic_;
+			
 
 			ros::Subscriber						pose_sub_;
 			geometry_msgs::PoseStamped			robot_pose_;
@@ -255,6 +267,7 @@ namespace nav3d {
 			
 			//ros::Subscriber 					goal_sub_;
 			vector<float>	 					w_;
+			vector<float>						wexp_;
 			
 			ros::Publisher						explore_pub_;
 			bool								nfe_exploration_;
@@ -271,4 +284,4 @@ namespace nav3d {
 	};
 
 }
-#endif
+//#endif

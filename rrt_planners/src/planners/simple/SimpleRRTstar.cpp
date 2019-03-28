@@ -298,7 +298,7 @@ std::vector<RRT::Node> RRT::SimpleRRTstar::solve(float secs)
 		solution = approxSolution;
 	
 	} else {
-		printf("\nRRT. Exlporation performed during %.6f secs\n", time);
+		printf("\nRRT. Algorithm executed for %.6f secs\n", time);
 	}
 	
 	//printf("Number of null states: %u\n", cont_null);

@@ -7,7 +7,7 @@
 
 RRT_ros::ValidityChecker3D::ValidityChecker3D(tf::TransformListener* tf, std::vector<geometry_msgs::Point>* footprint, 
 	float insc_radius, float size_x, float size_y, float size_z, float res, unsigned int dimensions, int distType, 
-										std::string robot_base_frame, std::string robot_odom_frame) : StateChecker()
+										std::string planning_frame) : StateChecker()
 {
 	
 	//get_cost_from_costmap_ = use_fc_costmap;
@@ -21,28 +21,33 @@ RRT_ros::ValidityChecker3D::ValidityChecker3D(tf::TransformListener* tf, std::ve
 		glo_costmap_ = glob_costmap;
 		tf_ = tf;
 	}*/
+	
+	ros::NodeHandle nh("~/RRT_ros_wrapper");
+	rrt_planner_type_ = 2;
+	nh.getParam("rrt_planner_type", rrt_planner_type_);
+	
+	nfe_exploration_ = false;
+	nh.getParam("nfe_exploration", nfe_exploration_);
+	
+	std::string features_name("navigation_features_3d");
+	nh.getParam("features_name", features_name);
 
-	features_ = new nav3d::Features3D(tf, footprint, size_x, size_y, size_z);
+	features_ = new nav3d::Features3D(features_name, tf, footprint, size_x, size_y, size_z);
 
 
 	dimensions_ = dimensions;
 	distanceType_ = distType;
 	time_ = ros::Time::now();
 
-	robot_base_frame_ = robot_base_frame;
-	robot_odom_frame_ = robot_odom_frame;
+	planning_frame_ = planning_frame;
+	//robot_odom_frame_ = robot_odom_frame;
 	
 	ros::NodeHandle n;
 	//explore_pub_ = n.advertise<visualization_msgs::Marker>("rrt_explore_goals", 1);
 	explore_pub_ = n.advertise<visualization_msgs::MarkerArray>("rrt_explore_goals", 1);
 	
 	
-	ros::NodeHandle nh("~");
-	rrt_planner_type_ = 2;
-	nh.getParam("rrt_planner_type", rrt_planner_type_);
 	
-	nfe_exploration_ = false;
-	nh.getParam("nfe_exploration", nfe_exploration_);
 	
 	//srand (time(NULL));
 	
@@ -58,7 +63,7 @@ RRT_ros::ValidityChecker3D::~ValidityChecker3D() {
 bool RRT_ros::ValidityChecker3D::isValid(RRT::State* s) const
 {
 	geometry_msgs::PoseStamped p_in;
-	p_in.header.frame_id = robot_base_frame_; 
+	p_in.header.frame_id = planning_frame_; 
 	//p_in.header.stamp = ros::Time(0); //this is a problem when the planning time is long. the time stamp should be the time when the rrt started to plan.
 	if((ros::Time::now()-time_).toSec() > 2.0) {
 			//time_ = ros::Time::now();
@@ -81,7 +86,7 @@ bool RRT_ros::ValidityChecker3D::isValid(RRT::State* s) const
 bool RRT_ros::ValidityChecker3D::getValid3dState(RRT::State* s) const
 {
 	geometry_msgs::PoseStamped p_in;
-	p_in.header.frame_id = robot_base_frame_; 
+	p_in.header.frame_id = planning_frame_; 
 	//p_in.header.stamp = ros::Time(0); //this is a problem when the planning time is long. the time stamp should be the time when the rrt started to plan.
 	if((ros::Time::now()-time_).toSec() > 2.0) {
 			//time_ = ros::Time::now();
@@ -385,7 +390,7 @@ std::vector<RRT::Node*> RRT_ros::ValidityChecker3D::clusterize_leaves(std::vecto
 
 
 
-
+/*
 RRT::Node* RRT_ros::ValidityChecker3D::evaluate_exploration(std::vector<RRT::Node*>* leaves) const
 {
 	
@@ -400,7 +405,7 @@ RRT::Node* RRT_ros::ValidityChecker3D::evaluate_exploration(std::vector<RRT::Nod
 		p.z = leaves->at(i)->getState()->getZ();
 		points.push_back(p);
 	}
-	std::vector<float> gain_info = features_->evaluate_leaves(&points, radius);
+	std::vector<float> gain_info = features_->evaluate_leaves(&points, planning_frame_, radius);
 	
 	float min_cost = 100.0;
 	int ind_goal;
@@ -425,8 +430,47 @@ RRT::Node* RRT_ros::ValidityChecker3D::evaluate_exploration(std::vector<RRT::Nod
 	
 	return leaves->at(ind_goal);
 	
-}
+}*/
 
+
+
+
+RRT::Node* RRT_ros::ValidityChecker3D::evaluate_exploration(std::vector<RRT::Node*>* leaves) const
+{
+	
+	float radius = 2.0;
+	printf("ValidityChecker3D. evaluate_exploration called!\n");
+	std::vector<geometry_msgs::Point> points;
+	for(unsigned int i=0; i<leaves->size(); i++)
+	{
+		geometry_msgs::Point p;
+		p.x = leaves->at(i)->getState()->getX();
+		p.y = leaves->at(i)->getState()->getY();
+		p.z = leaves->at(i)->getState()->getZ();
+		points.push_back(p);
+	}
+	
+	float min_cost = 1000.0;
+	int ind_goal;
+	float exploration_cost;
+	for(unsigned int i=0; i<leaves->size(); i++)
+	{	
+		if(rrt_planner_type_ == 1 || rrt_planner_type_ == 3 || nfe_exploration_) //RRT (no star)
+		{
+			exploration_cost = features_->evaluate_leaf(&points[i], -1.0, planning_frame_, radius);
+		}else {
+			exploration_cost = features_->evaluate_leaf(&points[i], leaves->at(i)->getAccCost(), planning_frame_, radius);
+		}
+		if(exploration_cost < min_cost)
+		{
+			min_cost = exploration_cost;
+			ind_goal = i;
+		}
+	}
+	
+	return leaves->at(ind_goal);
+	
+}
 
 
 
@@ -440,7 +484,7 @@ float RRT_ros::ValidityChecker3D::getCost(RRT::State* s)
 	//}
 
 	geometry_msgs::PoseStamped pose;
-	pose.header.frame_id = robot_base_frame_; 
+	pose.header.frame_id = planning_frame_; 
 	if((ros::Time::now()-time_).toSec() > 2.0)
 		time_ = ros::Time::now();
 	pose.header.stamp = time_; 
@@ -462,7 +506,7 @@ std::vector<float> RRT_ros::ValidityChecker3D::getFeatures(RRT::State* s)
 {
 	
 	geometry_msgs::PoseStamped pose;
-	pose.header.frame_id = robot_base_frame_; 
+	pose.header.frame_id = planning_frame_; 
 	pose.header.stamp = ros::Time(0);
 	pose.pose.position.x = s->getX();
 	pose.pose.position.y = s->getY();
