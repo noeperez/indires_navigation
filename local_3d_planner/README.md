@@ -1,5 +1,5 @@
 # local_3d_planner 
-A controller based on pure pursuit and DWA path tracking has been extended to command velocities to the differential robot so as to follow the path smoothly.
+A 3D controller based on pure pursuit and DWA path tracking has been extended to command velocities to the differential robot so as to follow the path smoothly.
 This path tracker has been extended to perform a collision detection checking based on pointcloud as sensory input. If the forward projection of the robot movement given by the control law is detected as a possible collision, a valid command is tried to be found by sampling variations of the given linear and angular velocities. 
 The controller follows the structure of the standard base local planner of ROS. However it does not use the local costmap of ROS and the collision detection is performed based on subscriptions to range source (sensor_msgs/PointCloud2 ROS message type). 
 
@@ -25,13 +25,16 @@ The controller follows the structure of the standard base local planner of ROS. 
 	- sim_granularity. Resolution in meters to split the expanded trayectory and check for collisions (Default: 0.025).
 	- angular_sim_granularity. Resolution in radians to split the expanded angular movement and check for collisions (Default: 0.025).
 	- controller_freq. Frequency of execution in Hz (Default: 15.0).
+	- local_area_radius. Radius around the robot to be considered in the pointcloud for local planning purposes. 
 
 * **Collision detection Parameters**
-	- pointcloud_topic. Name of the topic where the range sensor is publishing the pointcloud. The type of the ROS message required is sensor_msgs/PointCloud2.
-	- maximum_pitch_inclination.
-	- maximum_roll_inclination.
-	- maximum_roughness. 
-	- range_uncertainty. Value to indicate an uncertainty range in the measures of the laser sensors received. Default value: 0.025 meters.
+	- features_name. String that would be used as a prefix to look for the parameters required by the navigation_features_3d in the parameter server since it is used here for traversability analysis. See parameters of the navigation_features_3d package.
+
+
+## Dependences
+
+* **navigation_features_3d**
+* **costmap_2d**
 
 
 The package is a **work in progress** used in research prototyping. Pull requests and/or issues are highly encouraged.
