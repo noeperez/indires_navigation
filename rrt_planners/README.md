@@ -33,6 +33,7 @@ This planner also can work as a global planner in the move_base architecture or 
 	- 4 Kinodynamic RRT* (*x, y, yaw* state space).
 	- 5 Simplified Kinodynamic RRT*. RRT* that does not perform the tree rewiring.
 * **rrt_solve_time**. Time in seconds that the RRT* planner is allowed to plan a path. Maximum time to find a path in the case of the RRT.
+* **planning_frame**. TF frame in which the planner would be planning (usually "odom").
 * **rrt_goal_bias**. probability bias to sample the goal.
 * **rrt_max_insertion_dist**. Maximum distance (m) to insert a new node from the nearest node of the sample.
 * **rrt_goal_xyz_tol**. Tolerance (m) to consider that the goal has been reached in the x,y space.
