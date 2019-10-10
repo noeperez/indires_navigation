@@ -5,8 +5,9 @@ This is a catkin package of ROS that contains two libraries:
 
 * *upo_rrt_planners*: C++ library that contains the following RRT planners:
 
-	- *simple RRTstar*: RRT* planner in x,y, z coordinates without reasoning about kinodynamic constraints.
+	- *simple RRTstar*: RRT* planner in x,y,z coordinates without reasoning about kinodynamic constraints.
 	- *RRT*: RRT planner with kinodynamic constrains.
+	- *Quick-RRTStar* [1] : planner in x,y,z coordinates without reasoning about kinodynamic constraints.
 
 * *upo_rrt_planners_ros*: C++ library that wraps the previous library in order to be used in ROS. 
 
@@ -26,12 +27,10 @@ This planner also can work as a global planner in the move_base architecture or 
 
 ## Parameters
 
-* **rrt_planner_type**. RRT planner to use (value 1,2,3,4 or 5) ONLY AVAILABLE OPTIONS 2 AND 3 CURRENTLY
-	- 1 RRT. *x,y* state space (no dynamics).
-	- 2 RRT*. *x,y* state space (no dynamics).
-	- 3 Kinodynamic RRT (*x, y, yaw* state space).
-	- 4 Kinodynamic RRT* (*x, y, yaw* state space).
-	- 5 Simplified Kinodynamic RRT*. RRT* that does not perform the tree rewiring.
+* **rrt_planner_type**. Type of RRT planner to be used. Default: 2
+	- 1 RRT. *x,y,z* state space (no dynamics).
+	- 2 RRT*. *x,y,z* state space (no dynamics).
+	- 3 Quick-RRT*. *x,y,z* state space (no dynamics).
 * **rrt_solve_time**. Time in seconds that the RRT* planner is allowed to plan a path. Maximum time to find a path in the case of the RRT.
 * **planning_frame**. TF frame in which the planner would be planning (usually "odom").
 * **rrt_goal_bias**. probability bias to sample the goal.
@@ -42,9 +41,7 @@ This planner also can work as a global planner in the move_base architecture or 
 
 Only for RRT* planner:
 * **rrtstar_use_k_nearest**. Boolean to indicate whether to use k-nearest or radius search to find the neighbors in the tree.
-* **rrtstar_first_path_biasing**. Boolean to indicate if a sample biasing over the first path found should be performed.
-* **rrtstar_first_path_bias**. If *rrtstar_first_path_biasing* is true, this is the bias to sample for the path.
-* **rrtstar_first_stddev_bias**. If *rrtstar_first_path_biasing* is true, this is the standard deviation of the gaussian sampling performed over the first path found.
+* **quick_rrt_depth**. Depth of the parents employed by Quick-RRT* algorithm (in case of bei 
 
 
 Only for kinodynamic planners:
@@ -97,3 +94,5 @@ The upo_rrt_planners library uses nearest neighbor data structures through the F
 
 
 The package is a **work in progress** used in research prototyping. Pull requests and/or issues are highly encouraged.
+
+[1] B. Yamauchi. A Frontier-Based Approach for Autonomous Exploration. in In Proceedings of the IEEE International Symposium on Computational Intelligence, Robotics and Automation, 1997, pp. 146–151.
