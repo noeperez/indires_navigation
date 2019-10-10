@@ -35,10 +35,14 @@ Package that calculates the feature functions employed by different cost functio
 
 	
 * **Weight set parameters for exploration**
+
 The cost function for selecting the most promising frontier for exploration (leaf node of the RRT* tree) is based on three features: the number of points and their distribution around the leaf, the proximity between the leaf and the closest point of the trajectory of the robot so far, and the cost of the RRT* path to reach the leaf. This frontier evaluation has been called Cost Function Exploration (CFE), and it is used when the parameters nf_exploration and bf_exploration are false. 
 
 	- wexp1. Normalized weight for the feature of frontier cost. The frontier cost is computed as:
-      frontier_cost(leaf) = 0.7*points(leaf)/max_points + 0.3*stddev(leaf)/max_stddev. Where points(leaf) is the number of points in a sphere of radius 1.5 meters around the leaf point. stddev(leaf) is the standard deviation of the set of points in the previous sphere. max_points and max_stddev are saturation values chosen for normalization purposes. 
+
+      frontier_cost(leaf) = 0.7 * points(leaf)/max_points + 0.3 * stddev(leaf)/max_stddev. 
+
+      Where points(leaf) is the number of points in a sphere of radius 1.5 meters around the leaf point. stddev(leaf) is the standard deviation of the set of points in the previous sphere. max_points and max_stddev are saturation values chosen for normalization purposes. 
 	- wexp2. Normalized weight for the feature of of proximity between the leaf and the traveled path of the robot.
 	- wexp3. Normalized weight for the feature of RRT* path cost.
 
