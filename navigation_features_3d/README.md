@@ -40,7 +40,7 @@ Package that calculates the feature functions employed by different cost functio
 
 	- wexp1. Normalized weight for the feature of frontier cost. The frontier cost is computed as:
 
-      frontier_cost(leaf) = 0.7 * points(leaf)/max_points + 0.3 * stddev(leaf)/max_stddev. 
+		frontier_cost(leaf) = 0.7 * points(leaf)/max_points + 0.3 * stddev(leaf)/max_stddev. 
 
       Where points(leaf) is the number of points in a sphere of radius 1.5 meters around the leaf point. stddev(leaf) is the standard deviation of the set of points in the previous sphere. max_points and max_stddev are saturation values chosen for normalization purposes. 
 	- wexp2. Normalized weight for the feature of of proximity between the leaf and the traveled path of the robot.
