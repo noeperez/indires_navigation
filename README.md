@@ -10,7 +10,7 @@ C++ Library and ROS wrapper for path planning in 3D. It contains the following p
 
     - *Simple RRTStar* [1] : RRT* planner in x,y,z coordinates without reasoning about kinodynamic constraints.
     - *RRT* [2] : kinodynamic RRT planner in x,y,z,yaw coordinates.
-    - *Quick RRTStar*: Quick-RRT* planner in x,y,z coordinates without reasoning about kinodynamic constraints [3].
+    - *Quick RRTStar*  [3] : Quick-RRT* planner in x,y,z coordinates without reasoning about kinodynamic constraints.
 
 * *navigation_features_3d*:  
 Package for calculation of sample validity and feature functions employed by the cost function of the RRT planners for robot path planning.
@@ -35,5 +35,7 @@ The regular costmap_2d package of ROS has a dependency on PCL. Therefore, as we 
 The package is a **work in progress** used in research prototyping. Pull requests and/or issues are highly encouraged.
 
 [1] Karaman, S., & Frazzoli, E. (2011). Sampling-based algorithms for optimal motion planning. The International Journal of Robotics Research, 30(7), 846–894. https://doi.org/10.1177/0278364911406761
+
 [2] Lavalle, S. M. (1998). Rapidly-Exploring Random Trees: A New Tool for Path Planning. In (Vol. 129). https://doi.org/10.1.1.35.1853
+
 [3] In-Bae Jeong, Seung-Jae Lee, Jong-Hwan Kim (2019)- Quick-RRT*: Triangular inequality-based implementation of RRT* with improved initial solution and convergence rate, Expert Systems with Applications, Volume 123, 2019, Pages 82-90, ISSN 0957-4174, https://doi.org/10.1016/j.eswa.2019.01.032.
