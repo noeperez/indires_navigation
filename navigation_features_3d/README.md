@@ -36,7 +36,7 @@ Package that calculates the feature functions employed by different cost functio
 	
 * **Weight set parameters for exploration**
 
-The cost function for selecting the most promising frontier for exploration (leaf node of the RRT* tree) is based on three features: the number of points and their distribution around the leaf, the proximity between the leaf and the closest point of the trajectory of the robot so far, and the cost of the RRT* path to reach the leaf. This frontier evaluation has been called Cost Function Exploration (CFE), and it is used when the parameters nf_exploration and bf_exploration are false. 
+	The cost function for selecting the most promising frontier for exploration (leaf node of the RRT* tree) is based on three features: the number of points and their distribution around the leaf, the proximity between the leaf and the closest point of the trajectory of the robot so far, and the cost of the RRT* path to reach the leaf. This frontier evaluation has been called Cost Function Exploration (CFE), and it is used when the parameters nf_exploration and bf_exploration are false. 
 
 	- wexp1. Normalized weight for the feature of frontier cost. The frontier cost is computed as:
 
@@ -48,15 +48,15 @@ The cost function for selecting the most promising frontier for exploration (lea
 
 * **Other parameters for exploration**
 
-    - exp_pc_service_name: name of the ROS service that must be called when the system requires a copy of the point cloud employed for exploration analysis. This service is provided by the node pcl_filters_node. See package pcl_filters.
-    - nf_exploration: if true, enables the use of the Nearest Frontier Exploration (NFE) approach for frontier evaluation in exploration. This is an adaptation of the well-known Nearest Frontier approach
+	- exp_pc_service_name: name of the ROS service that must be called when the system requires a copy of the point cloud employed for exploration analysis. This service is provided by the node pcl_filters_node. See package pcl_filters.
+	- nf_exploration: if true, enables the use of the Nearest Frontier Exploration (NFE) approach for frontier evaluation in exploration. This is an adaptation of the well-known Nearest Frontier approach
 [1] to 3D point clouds. It is based on proximity criteria by selecting the frontier with the smallest Euclidean distance to the robot ignoring the existence of obstacles.
-    - bf_exploration: if true, enables the use of the Biggest Frontier Exploration (BFE) approach for frontier evaluation in exploration. It is based on size criteria. The frontier with less information (bigger volume without points) is selected as the goal.
-    - threshold_frontier: Value in range [0,1]. It determines whether a leaf of the tree is considered as a frontier or not based on a frontier cost for each leaf. If the cost is over the threshold_frontier value, the leaf is discarded as possible frontier. Default: 0.4.
-    - adaptative_threshold: if true, enables the option of dinamically increasing the value of the frontier_threshold if no frontiers are detected and the planning size has reached its maximum value (max_planning_size parameter). Default: True.
-    - min_planning_size: mimimum desired size of the boxed area employed in the navigation and exploration. Size in meters from the center of the box. So, the range for the x, y and x coordinates is [-min_planning_size, min_planning_size].
-    - max_planning_size: maximum desired size of the boxed area employed in the navigation and exploration. The exploration system changes the planning size dinamically (in the given ranges) based on the number of frontier found and their frontier cost associated. 
-    - cell_size_grid_exp: size in meters of the cells of the voxel grid in which the point cloud for exploration is stored.  
+	- bf_exploration: if true, enables the use of the Biggest Frontier Exploration (BFE) approach for frontier evaluation in exploration. It is based on size criteria. The frontier with less information (bigger volume without points) is selected as the goal.
+	- threshold_frontier: Value in range [0,1]. It determines whether a leaf of the tree is considered as a frontier or not based on a frontier cost for each leaf. If the cost is over the threshold_frontier value, the leaf is discarded as possible frontier. Default: 0.4.
+	- adaptative_threshold: if true, enables the option of dinamically increasing the value of the frontier_threshold if no frontiers are detected and the planning size has reached its maximum value (max_planning_size parameter). Default: True.
+	- min_planning_size: mimimum desired size of the boxed area employed in the navigation and exploration. Size in meters from the center of the box. So, the range for the x, y and x coordinates is [-min_planning_size, min_planning_size].
+	- max_planning_size: maximum desired size of the boxed area employed in the navigation and exploration. The exploration system changes the planning size dinamically (in the given ranges) based on the number of frontier found and their frontier cost associated. 
+	- cell_size_grid_exp: size in meters of the cells of the voxel grid in which the point cloud for exploration is stored. Default: 0.7
 
 ## Dependences
 
