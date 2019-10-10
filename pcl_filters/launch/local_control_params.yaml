@@ -18,6 +18,7 @@ PassThroughFilter:
 
 CropBoxFilter:
   enable: true
+  # these values are overwritten according to the value of local_grid_radius
   cb_min_x: -1.5
   cb_min_y: -1.5
   cb_min_z: -1.5
@@ -28,13 +29,13 @@ CropBoxFilter:
 
 VoxelGridFilter:
   enable: false
-  leaf_size: 0.10
+  leaf_size: 0.04
   min_point_per_voxel: 4
 
 
 VoxelGridCovarianceFilter:
-  enable: true
-  leaf_size:  0.05 #0.1 #0.15
-  min_point_per_voxel: 4 
+  enable: false
+  leaf_size: 0.15
+  min_point_per_voxel: 8  
 
 

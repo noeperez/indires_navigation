@@ -62,11 +62,28 @@ void RRT_ros::RRT_ros_wrapper::setup()
 	ros::NodeHandle private_nh("~/RRT_ros_wrapper");
 
 
+
+	/*
+	# RRT planner to use
+	# 1 -> RRT (no kinodynamics)
+	# 2 -> RRTstar (no kinodynamics)
+	# 3 -> Q-RRTstar (no kinodynamics)
+	# 4 -> Kinodynamic RRT
+	# 5 -> Kinodynamic RRTstar 
+	# 6 -> Kinodynamic simplified RRTstar
+	*/
 	private_nh.param<int>("rrt_planner_type", rrt_planner_type_, 1);
 	printf("RRT_ros_wrapper. rrt_planner_type = %i\n",  rrt_planner_type_);
       	
    	//private_nh.param<bool>("use_fc_in_costmap", use_fc_costmap_, false); 
 	//printf("RRT_ros_wrapper. use_fc_in_costmap = %i\n",  use_fc_costmap_);
+	
+	//Only for Quick-RRTstar
+	if(rrt_planner_type_ == 3)
+	{
+		private_nh.param<int>("quick_rrt_depth", depth_, 1);
+		printf("RRT_ros_wrapper. quick_rrt_depth = %i\n",  depth_);
+	}
 	
 	//RRT 
 	double aux;
@@ -88,15 +105,19 @@ void RRT_ros::RRT_ros_wrapper::setup()
 
 	
 	private_nh.param<std::string>("robot_base_frame", robot_base_frame_, "base_link");
+	printf("RRT_ros_wrapper. robot_base_frame = %s\n",  robot_base_frame_.c_str());
 	private_nh.param<std::string>("robot_odom_frame", robot_odom_frame_, "odom");
+	printf("RRT_ros_wrapper. robot_odom_frame = %s\n",  robot_odom_frame_.c_str());
 	private_nh.param<std::string>("robot_pc_sensor_frame", robot_pc_sensor_frame_, "optical_frame");
+	printf("RRT_ros_wrapper. robot_pc_sensor_frame = %s\n",  robot_pc_sensor_frame_.c_str());
 	
 	private_nh.param<std::string>("planning_frame", planning_frame_, "base_link");
+	printf("RRT_ros_wrapper. planning_frame = %s\n",  planning_frame_.c_str());
 
 	
 	//RRT* 
-	if(rrt_planner_type_ == 2 || rrt_planner_type_ >= 4) {
-		private_nh.param<bool>("rrtstar_use_k_nearest", rrtstar_use_k_nearest_, true);
+	if(rrt_planner_type_ == 2 || rrt_planner_type_ == 3 || rrt_planner_type_ >= 5) {
+		private_nh.param<bool>("rrtstar_use_k_nearest", rrtstar_use_k_nearest_, false);
 		printf("RRT_ros_wrapper. rrtstar_use_k_nearest = %i\n",  rrtstar_use_k_nearest_);
 		//private_nh.param<bool>("rrtstar_first_path_biasing", rrtstar_first_path_biasing_, false);
 		//printf("RRT_ros_wrapper. rrtstar_first_path_biasing_ = %i\n",  rrtstar_first_path_biasing_);
@@ -141,7 +162,7 @@ void RRT_ros::RRT_ros_wrapper::setup()
 	//float kino_linAcc, kino_angAcc;
 	//int kino_minControlSteps, kino_maxControlSteps;
 	//int kino_steeringType;
-	if(rrt_planner_type_ > 2) {
+	if(rrt_planner_type_ > 3) {
 		
 		private_nh.param<double>("kino_time_step", aux, 0.067);
 		kino_timeStep_ = (float)aux;
@@ -228,7 +249,7 @@ void RRT_ros::RRT_ros_wrapper::setup()
 	
 	
 	//if the planner is an RRT, the nav costmap can not be visualized
-	if(rrt_planner_type_ == 1 || rrt_planner_type_ == 3)
+	if(rrt_planner_type_ == 1 || rrt_planner_type_ == 4)
 		visualize_costmap_ = false;
 		
 	ros::NodeHandle n;
@@ -283,6 +304,16 @@ void RRT_ros::RRT_ros_wrapper::setup()
 	
 	
 	
+	
+	/*
+	# RRT planner to use
+	# 1 -> RRT (no kinodynamics)
+	# 2 -> RRTstar (no kinodynamics)
+	# 3 -> Q-RRTstar (no kinodynamics)
+	# 4 -> Kinodynamic RRT
+	# 5 -> Kinodynamic RRTstar 
+	# 6 -> Kinodynamic simplified RRTstar
+	*/
 	switch(rrt_planner_type_)
 	{
 		// ----- simple RRT --------------------
@@ -305,9 +336,24 @@ void RRT_ros::RRT_ros_wrapper::setup()
 				rrt_planner_->as<upo_RRT::SimpleRRTstar>()->setPathBias_stddev(rrtstar_first_path_stddev_bias_);
 			}*/
 			break;
+			
+		// ----- Quick RRT* --------------------
+		case 3:
+			printf("\n-------- Using simple Q-RRT* planner ----------\n");
+			rrt_planner_ = new RRT::SimpleQuickRRTstar();
+			rrt_planner_->as<RRT::SimpleQuickRRTstar>()->setMaxRange(max_range_);
+			rrt_planner_->as<RRT::SimpleQuickRRTstar>()->setDepth(depth_);
+			rrt_planner_->as<RRT::SimpleQuickRRTstar>()->set_useKnearest(rrtstar_use_k_nearest_);
+			//rrt_planner_->as<RRT::SimpleRRTstar>()->set_useFirstPathBiasing(rrtstar_first_path_biasing_);
+			rrt_planner_->as<RRT::SimpleQuickRRTstar>()->setRewireFactor(rrtstar_rewire_factor_);
+			/*if(rrtstar_first_path_biasing_ && !full_path_biasing_) {
+				rrt_planner_->as<upo_RRT::SimpleRRTstar>()->setPathBias(rrtstar_first_path_bias_);
+				rrt_planner_->as<upo_RRT::SimpleRRTstar>()->setPathBias_stddev(rrtstar_first_path_stddev_bias_);
+			}*/
+			break;
 		
 		// ----- kinodynamic RRT --------------------
-		case 3:
+		case 4:
 			printf("\n-------- Using Kinodynamic RRT planner ----------\n");
 			rrt_planner_ = new RRT::Rrt();
 			rrt_planner_->as<RRT::Rrt>()->setTimeStep(kino_timeStep_);
@@ -316,7 +362,7 @@ void RRT_ros::RRT_ros_wrapper::setup()
 			break;
 			
 		// ----- kinodynamic RRT* --------------------
-		case 4:
+		case 5:
 			printf("\n-------- Using Kinodynamic RRT* planner ----------\n");
 			rrt_planner_ = new RRT::RRTstar();
 			rrt_planner_->as<RRT::RRTstar>()->setMaxRange(max_range_);
@@ -335,7 +381,7 @@ void RRT_ros::RRT_ros_wrapper::setup()
 			break;
 			
 		// ----- kinodynamic simplified RRT* --------------------
-		case 5:
+		case 6:
 			printf("\n-------- Using Kinodynamic simplified RRT* planner ----------\n");
 			rrt_planner_ = new RRT::HalfRRTstar();
 			rrt_planner_->as<RRT::HalfRRTstar>()->setMaxRange(max_range_);
@@ -377,6 +423,13 @@ void RRT_ros::RRT_ros_wrapper::setup()
 	//Planning server
 	ros::NodeHandle nhandle("RRT_ros_wrapper");
 	plan_srv_ = nhandle.advertiseService("makeRRTPlan", &RRT_ros::RRT_ros_wrapper::makePlanService, this);
+	
+	
+	//solvetime_srv_ = nhandle.advertiseService("changeRRTSolveTime", &RRT_ros::RRT_ros_wrapper::changeTimeService, this);
+	solvetime_sub_ = nhandle.subscribe("ChangeRRTSolveTime", 1, &RRT_ros::RRT_ros_wrapper::rrttimeCallback, this);
+	
+	
+			
 	
 }
 
@@ -684,32 +737,36 @@ std::vector<geometry_msgs::PoseStamped> RRT_ros::RRT_ros_wrapper::RRT_plan(bool 
 	//printf("rrt_ros_wrapper. RRT_plan. after setting external samples\n");
 
 	std::vector<RRT::Node> path;
+	solvetime_mutex_.lock();
+	float time_to_solve = solve_time_; 
+	solvetime_mutex_.unlock();
 	switch(rrt_planner_type_)
 	{
 		case 1:
-			path = rrt_planner_->as<RRT::SimpleRRT>()->solve(solve_time_);
+			path = rrt_planner_->as<RRT::SimpleRRT>()->solve(time_to_solve);
 			break;
 			
 		case 2:
-			path = rrt_planner_->as<RRT::SimpleRRTstar>()->solve(solve_time_);
+			path = rrt_planner_->as<RRT::SimpleRRTstar>()->solve(time_to_solve);
 			break;
 			
 		case 3:
-			path = rrt_planner_->as<RRT::Rrt>()->solve(solve_time_);
+			path = rrt_planner_->as<RRT::Rrt>()->solve(time_to_solve);
 			break;
 			
 		case 4:
-			path = rrt_planner_->as<RRT::RRTstar>()->solve(solve_time_);
+			path = rrt_planner_->as<RRT::RRTstar>()->solve(time_to_solve);
 			break;
 			
 		case 5:
-			path = rrt_planner_->as<RRT::HalfRRTstar>()->solve(solve_time_);
+			path = rrt_planner_->as<RRT::HalfRRTstar>()->solve(time_to_solve);
 			break;
 			
 		default:
-			path = rrt_planner_->as<RRT::SimpleRRT>()->solve(solve_time_);
+			path = rrt_planner_->as<RRT::SimpleRRT>()->solve(time_to_solve);
 	}
-
+	
+	
 	if(path.empty()) {
 		printf("rrt_ros_wrapper. RRT_plan. Calculated path is empty!\n");
 		return rrt_plan_; 
@@ -769,6 +826,32 @@ std::vector<geometry_msgs::PoseStamped> RRT_ros::RRT_ros_wrapper::RRT_plan(bool 
 				
 		}
 		cont++;
+	}
+	
+	//If exploration, add orientation to the final pose
+	if(exploration)
+	{
+		/*
+		First, transform the goal location into previous point location frame: 
+									|cos(th)  sin(th)  0|
+			Rotation matrix R(th)= 	|-sin(th) cos(th)  0|
+									|  0        0      1|
+					                     
+			x' = (xr-xp)*cos(th_p)+(yr-yp)*sin(th_p)
+			y' = (xr-xp)*(-sin(th_p))+(yr-yp)*cos(th_p)
+			th' = atan2(y_r, x_r);
+		*/
+		geometry_msgs::PoseStamped last = rrt_plan_[(rrt_plan_.size()-1)];
+		geometry_msgs::PoseStamped prev = rrt_plan_[(rrt_plan_.size()-2)];
+		float xlast = last.pose.position.x;
+		float ylast = last.pose.position.y;
+		float xprev = prev.pose.position.x;
+		float yprev = prev.pose.position.y;
+		float xprima = (xlast-xprev)*cos(0.0) + (ylast-yprev)*sin(0.0);
+		float yprima = (xlast-xprev)*(-sin(0.0)) + (ylast-yprev)*cos(0.0);
+		float thprima = atan2(yprima, xprima);
+		
+		rrt_plan_[(rrt_plan_.size()-1)].pose.orientation = tf::createQuaternionMsgFromYaw(thprima);
 	}
 	
 	
@@ -857,6 +940,32 @@ std::vector<geometry_msgs::PoseStamped> RRT_ros::RRT_ros_wrapper::RRT_plan(bool 
 	//delete rrt_planner_;
 
 	return rrt_plan_;
+}
+
+
+
+//bool RRT_ros::RRT_ros_wrapper::changeTimeService(rrt_planners::ChangeSolveTime::Request &req, rrt_planners::ChangeSolveTime::Response &res)
+void RRT_ros::RRT_ros_wrapper::rrttimeCallback(const std_msgs::Float32ConstPtr &msg)
+{
+	float t = msg->data;
+	change_rrt_time(t);
+	solvetime_mutex_.lock();
+	printf("RRT_ros_wrapper. Time changed to %.2f\n", solve_time_);
+	solvetime_mutex_.unlock();
+}
+
+
+bool RRT_ros::RRT_ros_wrapper::change_rrt_time(float time) 
+{
+	printf("RRT_ros_wrapper. Changing RRT solve time...\n");
+	//float t = req.solve_time;
+	//float prev = solve_time_;
+	solvetime_mutex_.lock();
+	solve_time_ = time;
+	solvetime_mutex_.unlock();
+	//res.previous_time = prev;
+	//res.new_time = solve_time_;
+	return true;
 }
 
 

@@ -16,7 +16,10 @@ nav3d::Features3D::Features3D() {
 	size_x_ = 5.0*2.0;  	//m
 	size_y_ = 5.0*2.0;  	//m	
 	size_z_ = 5.0*2.0;  	//m
-	//resolution_ = res;		//m/cell	
+	//resolution_ = res;		//m/cell
+	current_size_ = size_x_/2.0;	
+	min_size_ = current_size_;
+	max_size_ = 11.0;
 	max_planning_dist_ = sqrt((size_x_*size_x_)+(size_y_*size_y_)+(size_z_*size_z_));
 
 	setParams(std::string("navigation_features_3d"));
@@ -29,6 +32,9 @@ nav3d::Features3D::Features3D(std::string name, tf::TransformListener* tf, float
 	size_x_ = size_x*2.0;  	//m
 	size_y_ = size_y*2.0;  	//m	
 	size_z_ = size_z*2.0;  	//m
+	current_size_ = size_x_/2.0;
+	min_size_ = current_size_;
+	max_size_ = 11.0;
 	//resolution_ = res;		//m/cell	
 	max_planning_dist_ = sqrt((size_x_*size_x_)+(size_y_*size_y_)+(size_z_*size_z_));
 
@@ -47,6 +53,9 @@ nav3d::Features3D::Features3D(std::string name, tf::TransformListener* tf, vecto
 	size_x_ = size_x*2.0;  	//m
 	size_y_ = size_y*2.0;  	//m
 	size_z_ = size_z*2.0;  	//m	
+	current_size_ = size_x_/2.0;
+	min_size_ = current_size_;
+	max_size_ = 11.0;
 	//resolution_ = res;		//m/cell	
 	max_planning_dist_ = sqrt((size_x_*size_x_)+(size_y_*size_y_)+(size_z_*size_z_));
 	
@@ -163,16 +172,67 @@ void nav3d::Features3D::setParams(std::string name)
 	printf("%s. max roughness:%.2f\n", name_.c_str(), roughness_);
 	min_points_allowed_ = 20;
 	n.getParam("min_points_allowed", min_points_allowed_);
+	
+	
+	exp_min_dist_goals_ = 1.0;
+	n.getParam("exp_min_dist_goals", exp_min_dist_goals_);
 
 	//ros::NodeHandle nh("~");
 	n.getParam("robot_base_frame", robot_base_frame_);
 	n.getParam("robot_odom_frame", robot_odom_frame_);
 	n.getParam("robot_odom_topic", robot_odom_topic_);
 	
-	nfe_exploration_ = false;
-	n.getParam("nfe_exploration", nfe_exploration_);
-	if(nfe_exploration_)
-		printf("NFE EXPLORATION WILL BE EMPLOYED!!!\n");
+	
+	threshold_frontier_ = 0.7;
+	n.getParam("threshold_frontier", threshold_frontier_);
+	printf("%s. threshold_frontier:%.2f\n", name_.c_str(), threshold_frontier_);
+	adaptative_threshold_ = false;
+	n.getParam("adaptative_threshold", adaptative_threshold_);
+	printf("%s. adaptative_threshold:%i\n", name_.c_str(), (int)adaptative_threshold_);
+	
+	num_points_saturation_ = 3400.0;
+	n.getParam("num_points_saturation", num_points_saturation_);
+	//printf("%s. num_points_saturation:%i\n", name_.c_str(), (num_points_saturation_);
+	
+	
+	numpoint_cost_limit_ = threshold_frontier_ - 0.05;
+	//n.getParam("numpoint_cost_limit", numpoint_cost_limit_);
+	//printf("%s. numpoint_cost_limit:%.2f\n", name_.c_str(), numpoint_cost_limit_);
+	percentage_limit_ = 0.80;
+	n.getParam("percentage_limit", percentage_limit_);
+	printf("%s. percentage_limit:%.2f\n", name_.c_str(), percentage_limit_);
+	
+	n.getParam("min_planning_size", min_size_);
+	printf("%s. min_planning_size: %.2f\n", name_.c_str(), min_size_);
+	n.getParam("max_planning_size", max_size_);
+	printf("%s. max_planning_size: %.2f\n", name_.c_str(), max_size_);
+	
+	
+	nfe_ = false;
+	n.getParam("nf_exploration", nfe_);
+	if(nfe_) {
+		printf("NEIREST FRONTIER EXPLORATION WILL BE EMPLOYED!!!\n");
+	}
+		
+	bfe_ = false;
+	n.getParam("bf_exploration", bfe_);
+	
+	if(nfe_ && bfe_)
+		printf("NFE and BFE can not be used at the same time...\n");
+	
+	if(bfe_) {
+		nfe_ = false;
+		printf("BIGGEST FRONTIER EXPLORATION WILL BE EMPLOYED!!!\n");
+	}
+	
+		
+
+	exp_pc_service_name_ = "";
+	n.getParam("exp_pc_service_name", exp_pc_service_name_);
+
+	ros::NodeHandle nh;
+	exp_client_ = nh.serviceClient<pcl_filters::GetFilteredPC>(exp_pc_service_name_.c_str());
+	
 
 	//pitch_low_ = -M_PI/2.0 - pitch_max;
 	//pitch_low2_ = M_PI/2.0 - pitch_max; 
@@ -186,14 +246,48 @@ void nav3d::Features3D::setParams(std::string name)
 	pitch_high_ = M_PI - pitch_max;
 	roll_low_ = roll_max;
 	roll_high_ = M_PI - roll_max;
+	
+	
+	pitch_low2_ = M_PI/2.0 - 0.80; //pitch_max;
+	pitch_high2_ = M_PI/2.0 + 0.80; //pitch_max;
+	roll_low2_ = M_PI/2.0 - 0.80; //roll_max;
+	roll_high2_ = M_PI/2.0 + 0.80; //roll_max;
 
 
 	robot_radius_ = 0.25;
 	n.getParam("robot_circuns_radius", robot_radius_);
+	
+	
+	
+	
+	
+	visited_region_enabled_ = true;
+	n.getParam("visited_region_enabled", visited_region_enabled_);
+	printf("%s. visited_region_enabled: %i\n", name_.c_str(), visited_region_enabled_);
+	
+	remove_wall_frontier_enabled_=true;
+	n.getParam("remove_wall_frontier_enabled", remove_wall_frontier_enabled_);
+	printf("%s. remove_wall_frontier_enabled: %i\n", name_.c_str(), remove_wall_frontier_enabled_);
+	
+	variable_size_enabled_=true;
+	n.getParam("variable_size_enabled", variable_size_enabled_);
+	printf("%s. variable_size_enabled: %i\n", name_.c_str(), variable_size_enabled_);
 
 
 	kdtree_ = new pcl::KdTreeFLANN<pcl::PointXYZ>();
+	//kdtree_exp_ = new pcl::KdTreeFLANN<pcl::PointXYZ>();
 	//pca_ =  new pcl::PCA<pcl::PointXYZ>();
+	vgc_ = new pcl::VoxelGridCovariance<pcl::PointXYZ>();
+	cell_size_ = 0.07;
+	n.getParam("cell_size_grid_exp", cell_size_);
+	vgc_->setLeafSize(cell_size_, cell_size_, cell_size_); //0.01f, 0.01f, 0.01f	//inherited from pcl::VoxelGrid
+	vgc_->setMinPointPerVoxel(4); 
+	
+	
+	wall_cloud_.width = 0;
+	wall_cloud_.height = 1;
+	wall_cloud_.is_dense = false;
+	wall_cloud_.header.frame_id = robot_odom_frame_;
 	
 	
 	//octree_resolution_ = 128.0f;
@@ -204,7 +298,7 @@ void nav3d::Features3D::setParams(std::string name)
 	//octree_ = new pcl::search::Octree<pcl::PointXYZ>(octree_resolution_);
 	//octree_->setResolution(octree_resolution_);
 	//octree_.setResolution(octree_resolution_);
-
+	
 
 
 	//goal_sub_ = nh_.subscribe("/rrt_goal", 1, &Features3D::goalCallback, this);
@@ -214,6 +308,15 @@ void nav3d::Features3D::setParams(std::string name)
 	pose_sub_ = nh_.subscribe(robot_odom_topic_, 1, &Features3D::poseCallback, this);
 	
 	explore_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("rrt_explore_costs", 1);
+	
+	wall_pub_ = nh_.advertise<visualization_msgs::Marker>("wall_points", 2);
+	
+	frontier_pub_ = nh_.advertise<visualization_msgs::Marker>("frontiers_points", 2);
+	
+	pc_wall_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("wall_pointcloud", 1); 
+	
+	
+	rrt_time_pub_ = nh_.advertise<std_msgs::Float32>("RRT_ros_wrapper/ChangeRRTSolveTime", 1);
 	
 	
 	//pub_gaussian_markers_ = n.advertise<visualization_msgs::MarkerArray>("gaussian_markers", 5);
@@ -238,6 +341,7 @@ void nav3d::Features3D::setParams(std::string name)
 
 nav3d::Features3D::~Features3D() {
 	delete kdtree_;
+	delete kdtree_exp_;
 	//delete octree_;
 }
 
@@ -368,6 +472,37 @@ std::vector<std::vector<int> > nav3d::Features3D::clusterize_leaves(std::vector<
 
 	std::vector<std::vector<int> > clusters;
 
+
+	//GET THE POINT CLOUD FOR EVALUATION
+	pcl_filters::GetFilteredPC srv;
+	if(!exp_client_.call(srv))
+	{
+		ROS_ERROR("%s. evaluate_leaves. Error getting filtered point cloud", name_.c_str());
+		return clusters;
+	}
+	
+	sensor_msgs::PointCloud2 local;
+	if(!pcl_ros::transformPointCloud(robot_odom_frame_, srv.response.pc, local, *tf_listener_)) {
+		ROS_WARN("%s. evaluate_leaves. TransformPointCloud failed!!!!!", name_.c_str());
+	} else {
+
+		pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
+		pcl::fromROSMsg(local, *cloud);
+		//exp_cloud_ = cloud;
+		//exp_cloud_ = *cloud;
+		//kdtree_exp_->setInputCloud(cloud);
+		//kdtree_exp_->setInputCloud(exp_cloud_);
+		//printf("\nBefore setInputCloud\n");
+		vgc_->setInputCloud(cloud);
+		//printf("\nBefore vgc_filter\n");
+		pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_fil(new pcl::PointCloud<pcl::PointXYZ>);
+		vgc_->filter(*cloud_fil, true);
+		//printf("\nAfter filter\n");
+		//*exp_cloud_ = *cloud_fil;
+		//printf("\nAfter exp_cloud = cloud_fil\n");
+	}
+
+
 	if(cluster_indices.empty())
 	{
 		printf("%s. Clusterize_leaves. No clusters found!!!\n", name_.c_str());
@@ -380,20 +515,12 @@ std::vector<std::vector<int> > nav3d::Features3D::clusterize_leaves(std::vector<
 	{
 		std::vector<int> ind;
 		//pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_cluster (new pcl::PointCloud<pcl::PointXYZ>);
-		for(std::vector<int>::const_iterator pit = it->indices.begin (); pit != it->indices.end (); ++pit) {
-			//cloud_cluster->points.push_back(ps->points[*pit]);
-			ind.push_back((int)*pit); 
-			//printf("nav_features3d. Cluster: %i, indice: %i \n", j, (int)*pit);
+		for(std::vector<int>::const_iterator pit = it->indices.begin (); pit != it->indices.end (); ++pit) 
+		{
+			ind.push_back((int)*pit);
+			
 		}
-		//cloud_cluster->width = cloud_cluster->points.size();
-		//cloud_cluster->height = 1;
-		//cloud_cluster->is_dense = true;
-		//printf("nav_features3d. cluster %i filled\n", j);
-		//std::cout << "PointCloud representing the Cluster: " << cloud_cluster->points.size() << " data points." << std::endl;
-		//std::stringstream ss;
-		//ss << "cloud_cluster_" << j << ".pcd";
-		//writer.write<pcl::PointXYZ> (ss.str (), *cloud_cluster, false); //*
-		
+			
 		clusters.push_back(ind);
 		j++;
 	}
@@ -406,7 +533,14 @@ std::vector<std::vector<int> > nav3d::Features3D::clusterize_leaves(std::vector<
 
 
 
-float nav3d::Features3D::evaluate_leaf(geometry_msgs::Point* p, float rrt_cost, std::string frame, float radius)
+
+
+
+
+
+
+
+float nav3d::Features3D::evaluate_leaf(geometry_msgs::Point* p, float rrt_cost, std::string frame, float radius, float &npoints)
 {
 	geometry_msgs::PoseStamped ps;
 	ps.header.frame_id = frame;
@@ -415,193 +549,567 @@ float nav3d::Features3D::evaluate_leaf(geometry_msgs::Point* p, float rrt_cost, 
 	ps.pose.orientation = tf::createQuaternionMsgFromYaw(0.0);
 	geometry_msgs::PoseStamped st = transformPoseTo(ps, robot_odom_frame_, false);
 	
-	if(nfe_exploration_)
-	{
-		float max_dist = 5.0*5.0;
-		float dcost = no_return_cost(&st);
-			
-		float d = (p->x*p->x + p->y*p->y + p->z*p->z);
-		if (d>max_dist)
-			d = max_dist;
-		float nfe_cost = d/max_dist;
-			
-		float exp_cost = 0.6*nfe_cost + 0.4*dcost;
-		return exp_cost;
-		
-	}
-	
-	
 	pcl::PointXYZ sp;
 	sp.x = st.pose.position.x;
 	sp.y = st.pose.position.y;
 	sp.z = st.pose.position.z;
 		
-	std::vector<int> pointIdxRadiusSearch;
-	std::vector<float> pointRadiusSquaredDistance;
-
-	tree_mutex_.lock();
-
-	float num_points = kdtree_->radiusSearch(sp, radius, pointIdxRadiusSearch, pointRadiusSquaredDistance);
-	//printf("3DNavFeat. Evaluate_leaves. leaf %i, num_points: %.1f", i, num_points);
 		
+	std::vector<float> pointRadiusSquaredDistance;
+	std::vector< const pcl::VoxelGridCovariance<pcl::PointXYZ>::Leaf* > k_leaves;
+	
+	
+	
+	//--------------------------------------------------------------------------------
+	//1.- REMOVE FRONTIERS CLOSE TO WALLS
+	//--------------------------------------------------------------------------------
+	if(remove_wall_frontier_enabled_)
+	{
+		int n = vgc_->radiusSearch(sp, (robot_radius_+0.30), k_leaves, pointRadiusSquaredDistance);
+
+		if(n>0)
+		{
+			//THROUGH NORMALS of VOXEL GRID COVARIANCE
+			int cont=0;
+			for(const auto& it : k_leaves) //const 
+			{
+				const pcl::VoxelGridCovariance<pcl::PointXYZ>::Leaf *l = it; //&(it->second);
+
+				Eigen::Vector3d mean = l->getMean();
+				Eigen::Matrix3d evecs = l->getEvecs();
+				Eigen::Vector3d evals = l->getEvals();
+					
+				Eigen::Quaternion<double> q(evecs);
+
+				auto euler = q.toRotationMatrix().eulerAngles(0, 1, 2); //0->yaw, 1->pitch, 2->roll
+				double yaw = euler[0]; 
+				double pitch = euler[1]; 
+				double roll = euler[2];
+						
+				
+				if(!((fabs(pitch) < pitch_high2_ && fabs(pitch) > pitch_low2_) || (fabs(yaw) < roll_high2_ && fabs(yaw) > roll_low2_))) {
+					cont++;
+
+				}
+				
+			}
+			if(cont >= 30)
+			{
+				wall_points_.push_back(sp);
+				return 1.0;
+						
+			} else {
+					//printf("Total points: %i, wall points: %i, NO WALL!!!!\n", n, cont);
+					 
+			}
+		} else{
+			return 1.0;
+		}
+	}
+			
+
+	//--------------------------------------------------------------------------------
+	//2.- REMOVE FRONTIERS VISITED TWICE
+	//--------------------------------------------------------------------------------
+	k_leaves.clear();
+	pointRadiusSquaredDistance.clear();
+	float num_points = vgc_->radiusSearch(sp, radius, k_leaves, pointRadiusSquaredDistance);
+	npoints = num_points;
+
+
+	//float goal_cost = 0.1;
+	if(visited_region_enabled_)
+	{
+		//Evaluate if the region was visited
+		if(!exp_regions_.empty())
+		{
+			for(unsigned int i=0; i<exp_regions_.size(); i++)
+			{
+				geometry_msgs::Point p = exp_regions_[i].p;
+				//printf("Goal %u: x:%.1f, y:%.1f, z:%.1f, npoints:%.1f, visits:%i\n", i, p.x,p.y,p.z,exp_regions_[i].num_points, exp_regions_[i].visits); 
+				float r = (sp.x-p.x)*(sp.x-p.x)+(sp.y-p.y)*(sp.y-p.y)+(sp.z-p.z)*(sp.z-p.z);
+				float d = sqrt(r);
+				if(d < exp_min_dist_goals_)
+				{
+					if(exp_regions_[i].visits >= 2){
+						printf("REGION %u visited %i times. Returning cost 1!!\n", i, exp_regions_[i].visits);
+						//goal_cost = 1.0;
+						return 1.0;
+					}
+					//float similarity;
+					//if(exp_regions_[i].num_points > num_points)
+					//	similarity = num_points/exp_regions_[i].num_points;
+					//else
+					//	similarity = exp_regions_[i].num_points/num_points;
+
+					//if the similary in the number of points is above the 85%, we
+					//consider that we gain little info, so we can give it a new chance
+					/*if(similarity > 0.85) {
+						goal_cost = 0.3;
+						break;
+					} else { //If the number of points has increased after the first visit, 
+							 //we consider that is more difficult to get more information
+						goal_cost = 0.6;
+						break;
+					}*/
+					//goal_cost = 0.5;
+
+				} 
+			}
+		}
+	}
+
+
+	
+	//--------------------------------------------------------------------------------
+	//3.- EVALUATE POSSIBLE VOIDS ACCORDING TO THE NUM OF POINTS AND STD DEV
+	//--------------------------------------------------------------------------------	
 	if(num_points > 0.0)
 	{
 		//Normalize num_points
-		float max_points = 10000.0;
-		if(num_points > max_points) num_points = max_points;
-			num_points = (num_points/max_points);
+		//float max_points = 3400.0;
+		if(num_points > num_points_saturation_) num_points = num_points_saturation_;
+		num_points = (num_points/num_points_saturation_);
+		
 				
-	} else
+	} else {
 		num_points = 1.0;
+		return num_points;
+	}
+		
+	//Compute Standard deviation of the point set
+	Eigen::Vector3d	mean;
+	mean[0] = mean[1] = mean[2] = 0.0;
+	for(const auto& it : k_leaves) //const 
+	{
+		const pcl::VoxelGridCovariance<pcl::PointXYZ>::Leaf *l = it; //&(it->second);
+		Eigen::Vector3d m = l->getMean();
+		mean[0] = mean[0] + m[0];
+		mean[1] = mean[1] + m[1];
+		mean[2] = mean[2] + m[2];
+	}
+	mean[0] = mean[0]/k_leaves.size();
+	mean[1] = mean[1]/k_leaves.size();
+	mean[2] = mean[2]/k_leaves.size();
+	
+	float sum = 0;
+	float max_d = 0;;
+	for(const auto& it : k_leaves) //const 
+	{
+		const pcl::VoxelGridCovariance<pcl::PointXYZ>::Leaf *l = it; //&(it->second);
+		Eigen::Vector3d m = l->getMean();
+		float s = (m[0] - mean[0]) + (m[1] - mean[1]) + (m[2] - mean[2]);
+		float sq = s * s;
+		sum += sq;
+		
+		//For normalization
+		float n = radius; // + radius; // + radius;
+		float sqn = n * n;
+		max_d += sqn;
+	}
+	//float me = sum / pointIdxRadiusSearch.size();
+	float variance = sum / (float)(k_leaves.size() - 1);
+	float stddev = sqrt (variance);
+	
+	//for normalization
+	float varn = max_d /  (float)(k_leaves.size() - 1);
+	float max_stddev = sqrt(varn);
+	
+	float stddev_norm = stddev / max_stddev;
+	if(stddev_norm > 1.0) stddev_norm = 1.0; 
+	//printf("Evaluate leaf: points: %.2f, stddev: %.4f, max_std: %.4f, std_norm: %.4f\n", num_points, stddev, max_stddev, stddev_norm);
+	
+	float num_point_cost = 0.7*num_points + 0.3*stddev_norm; 
+	
+	
+	if(num_point_cost > threshold_frontier_)
+		return 1.0;
+	
 			
+	num_points_.push_back(num_point_cost);
+	
+	
+	
+	//--------------------------------------------------------------------------------
+	// NFE COST
+	//--------------------------------------------------------------------------------
+	if(nfe_)
+	{
+		pose_mutex_.lock(); 
+		geometry_msgs::PoseStamped rpose = robot_pose_;
+		pose_mutex_.unlock();
+		float rx = rpose.pose.position.x;
+		float ry = rpose.pose.position.y;
+		float rz = rpose.pose.position.z;
+		float max_dist = current_size_* current_size_* current_size_;
+			
+		float d = sqrt((p->x-rx)*(p->x-rx) + (p->y-ry)*(p->y-ry) + (p->z-rz)*(p->z-rz));	
+		//float d = (p->x*p->x + p->y*p->y + p->z*p->z);
+		if (d>max_dist)
+			d = max_dist;
+		float nfe_cost = d/max_dist;
+		return nfe_cost;
+		
+	} else if(bfe_) {
+		//----------------------------------------------------------------------------
+		// BFE COST
+		//----------------------------------------------------------------------------
+		return num_point_cost;
+	}
+	
+	
+	
+	//--------------------------------------------------------------------------------
+	//4.- NO-RETURN COST
+	//--------------------------------------------------------------------------------
 	float dcost = no_return_cost(&st);
 			
-	tree_mutex_.unlock();
 	
+	//--------------------------------------------------------------------------------
+	//5.- TOTAL COST
+	//--------------------------------------------------------------------------------
 	float exp_cost;
 	if(rrt_cost == -1.0)
-		exp_cost = (wexp_[0]+wexp_[2]/2.0)*num_points + (wexp_[1]+wexp_[2]/2.0)*dcost;
+		exp_cost = (wexp_[0]+wexp_[2]/2.0)*num_point_cost + (wexp_[1]+wexp_[2]/2.0)*dcost;
 	else
-		exp_cost = wexp_[0]*num_points + wexp_[1]*dcost + wexp_[2]*rrt_cost;  //0.45, 0.35, 0.2 
+		exp_cost = wexp_[0]*num_point_cost + wexp_[1]*dcost + wexp_[2]*rrt_cost; // + wexp_[3]*goal_cost;//0.35, 0.3, 0.175, 0.175 
+	
+	
 		
 	return exp_cost;
 	
 }
 
 
-std::vector<float> nav3d::Features3D::evaluate_leaves(std::vector<geometry_msgs::Point>* points, std::string frame, float radius)
+int nav3d::Features3D::evaluate_leaves(std::vector<geometry_msgs::Point>* points, std::vector<float>* pcosts, std::string frame, float radius)
 {
-	
-	//publish exploration goals and costs
-	visualization_msgs::MarkerArray ma;
-	
-	visualization_msgs::Marker l;
-	l.header.frame_id = frame;
-	l.header.stamp = ros::Time();
-	l.ns = "rrt_exploration_costs";
-	l.type = visualization_msgs::Marker::CYLINDER;
-	l.action = visualization_msgs::Marker::ADD;
-	l.scale.x = 0.1;
-	l.scale.y = 0.1;
-	l.scale.z = 0.03;
-	l.color.r = 1.0f;
-	l.color.g = 1.0f;
-	l.color.b = 0.0f;
-	l.color.a = 1.0;
-	l.lifetime = ros::Duration();
-	
-	visualization_msgs::Marker t;
-	t = l;
-	t.scale.x = 0.15;
-	t.scale.y = 0.15;
-	t.scale.z = 0.15;
-	t.color.r = 1.0f;
-	t.color.g = 1.0f;
-	t.color.b = 1.0f;
-	t.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
-			
+
+	float min_cost = 1000.0;
+	int ind_goal;
+	float exploration_cost;
+	float num_points;
+	for(unsigned int i=0; i<points->size(); i++)
+	{	
+		float npoints;
+		//printf("\nBefore evaluate_leaf\n");
+		exploration_cost = evaluate_leaf(&(points->at(i)), pcosts->at(i), frame, radius, npoints);
+		//printf("\nAfter evaluate leaf\n");
+		if(exploration_cost < 1.0) frontier_points_.push_back(points->at(i));
+		if(exploration_cost < min_cost)
+		{
+			min_cost = exploration_cost;
+			ind_goal = i;
+			num_points = npoints;
+		}
+	}
 	
 	
-	std::vector<float> gain_info;
+	visualization_msgs::Marker marker;
+	marker.header.frame_id = robot_odom_frame_; 
+	marker.header.stamp = ros::Time();
+	marker.ns = "wall_points";
+	marker.id = 3000; //key;
+	marker.type = visualization_msgs::Marker::POINTS;
+	marker.action = visualization_msgs::Marker::ADD;
+	marker.scale.x = 0.1;
+	marker.scale.y = 0.1; 
+	marker.scale.z = 0.1; 
+	marker.color.a = 1.0;
+	marker.color.r = 1.0;
+	marker.color.g = 0.0;
+	marker.color.b = 0.0;
 	
+	
+		
+	/*wall_cloud_.width = wall_cloud_.width + wall_points_.size();
+	for(unsigned int i=0; i<wall_points_.size(); i++)
+	{
+		pcl::PointXYZ p(wall_points_[i].x, wall_points_[i].y, wall_points_[i].z);
+		wall_cloud_.points.push_back(p);
+	}*/
+
+		
+	for(unsigned int i=0; i<wall_points_.size(); i++)
+	{
+		geometry_msgs::Point p;
+		p.x = wall_points_[i].x;
+		p.y = wall_points_[i].y;
+		p.z = wall_points_[i].z;
+
+		marker.points.push_back(p);
+	}
+		
+	wall_pub_.publish(marker);
+	wall_points_.clear();
+		
+	//sensor_msgs::PointCloud2 msg;
+	//pcl::toROSMsg(wall_cloud_, msg);
+	//pc_wall_pub_.publish(msg);
+	
+	
+	
+	visualization_msgs::Marker marker2;
+	marker2.header.frame_id = robot_odom_frame_; 
+	marker2.header.stamp = ros::Time();
+	marker2.ns = "frontier_points";
+	marker2.id = 4000; //key;
+	marker2.type = visualization_msgs::Marker::POINTS;
+	marker2.action = visualization_msgs::Marker::ADD;
+	marker2.scale.x = 0.15;
+	marker2.scale.y = 0.15; 
+	marker2.scale.z = 0.15; 
+	marker2.color.a = 1.0;
+	marker2.color.r = 1.0;
+	marker2.color.g = 1.0;
+	marker2.color.b = 0.0;
+	//marker.lifetime = ros::Duration(2.0);
+	for(unsigned int i=0; i<frontier_points_.size(); i++)
+	{
+		frontier_points_[i].z = frontier_points_[i].z+0.02;
+		marker2.points.push_back(frontier_points_[i]);
+	}
+		
+	frontier_pub_.publish(marker2);
+	frontier_points_.clear();
+	
+								
+	
+	
+
+	//Transform goal to the correct frame
 	geometry_msgs::PoseStamped ps;
 	ps.header.frame_id = frame;
 	ps.header.stamp = ros::Time::now();
+	ps.pose.position = points->at(ind_goal);
+	ps.pose.orientation = tf::createQuaternionMsgFromYaw(0.0);
+	geometry_msgs::PoseStamped st = transformPoseTo(ps, robot_odom_frame_, false);
+
+	geometry_msgs::Point p;
+	p.x = st.pose.position.x;
+	p.y = st.pose.position.y;
+	p.z = st.pose.position.z;
 	
-	
-	if(nfe_exploration_)
+	//-----------------------------------------------------------------------------
+	//  EVALUATE IF THE REGION WAS ALREADY VISITED
+	//-----------------------------------------------------------------------------
+	if(visited_region_enabled_)
 	{
-		
-		float max_dist = 5.0*5.0;
-		for(unsigned int i=0; i<points->size(); i++)
+		//printf("Evaluating point x:%.1f, y:%.1f, z:%.1f with goals:\n", p.x, p.y, p.z);
+		for(unsigned int i=0; i<exp_regions_.size(); i++)
 		{
-			ps.pose.position = points->at(i);
-			ps.pose.orientation = tf::createQuaternionMsgFromYaw(0.0);
-			geometry_msgs::PoseStamped st = transformPoseTo(ps, robot_odom_frame_, false);
-			float dcost = no_return_cost(&st);
-			
-			geometry_msgs::Point p = points->at(i);
-			float d = p.x*p.x + p.y*p.y + p.z*p.z;
-			if (d>max_dist)
-				d = max_dist;
-			float nfe_cost = d/max_dist;
-			
-			float cost = 0.6*nfe_cost + 0.4*dcost;
-			gain_info.push_back(cost);
-			
-			l.id = i+300;
-			//l.text = std::to_string(cost);
-			l.pose.position = points->at(i);
-			l.pose.orientation = tf::createQuaternionMsgFromYaw(0.0);
-			//printf(", id: %i, pcost: %.3f, dcost: %.3f, totalc: %.3f\n", (int)l.id, num_points, dcost, cost);
-			ma.markers.push_back(l);
-			t.id = i+600;
-			t.pose.position = points->at(i);
-			t.pose.position.z = t.pose.position.z + 0.05; 
-			t.pose.orientation = tf::createQuaternionMsgFromYaw(0.0);
-			t.text = std::to_string(cost);
-			ma.markers.push_back(t);
+			geometry_msgs::Point t = exp_regions_[i].p;
+			float r = (p.x-t.x)*(p.x-t.x)+(p.y-t.y)*(p.y-t.y)+(p.z-t.z)*(p.z-t.z);
+			float d = sqrt(r);
+			//printf("Goal %u: x:%.1f, y:%.1f, z:%.1f, d: %.2f, visits:%i\n", i, t.x,t.y,t.z, d, exp_regions_[i].visits);
+			if(d <= exp_min_dist_goals_)
+			{
+				printf("Evaluate_leaves. Region previously visited. Adding the visit!\n\n");
+				exp_regions_[i].visits = exp_regions_[i].visits+1;
+			} 
 		}
-		explore_pub_.publish(ma);
-		return gain_info;
 	}
 	
 	
 	
-	for(unsigned int i=0; i<points->size(); i++)
+	//-----------------------------------------------------------------------------
+	//  EVALUATE THE VOID COSTS IN ORDER TO INCREASE/DECREASE THE EXPLORATION SIZE
+	//-----------------------------------------------------------------------------
+	if(variable_size_enabled_)
 	{
-		ps.pose.position = points->at(i);
-		ps.pose.orientation = tf::createQuaternionMsgFromYaw(0.0);
-		geometry_msgs::PoseStamped st = transformPoseTo(ps, robot_odom_frame_, false);
-		
-		pcl::PointXYZ sp;
-		sp.x = st.pose.position.x;
-		sp.y = st.pose.position.y;
-		sp.z = st.pose.position.z;
-		
-
-		std::vector<int> pointIdxRadiusSearch;
-		std::vector<float> pointRadiusSquaredDistance;
-
-		tree_mutex_.lock();
-
-		float num_points = kdtree_->radiusSearch(sp, radius, pointIdxRadiusSearch, pointRadiusSquaredDistance);
-		//printf("3DNavFeat. Evaluate_leaves. leaf %i, num_points: %.1f", i, num_points);
-		
-		if(num_points > 0.0)
-		{
-			//Normalize num_points
-			float max_points = 10000.0;
-			if(num_points > max_points) num_points = max_points;
-			num_points = (num_points/max_points);
+	
+		ros::NodeHandle nh;
+		ros::ServiceClient rrtfloor = nh.serviceClient<pcl_filters::ChangeCropboxSize>("pcl_filters_node_1/change_cropbox_size");
+		ros::ServiceClient features = nh.serviceClient<pcl_filters::ChangeCropboxSize>("pcl_filters_node_2/change_cropbox_size");
+		ros::ServiceClient explore = nh.serviceClient<pcl_filters::ChangeCropboxSize>("pcl_filters_node_4/change_cropbox_size");
+		//ros::ServiceClient rrttime = nh.serviceClient<rrt_planners::ChangeSolveTime>("RRT_ros_wrapper/changeRRTSolveTime");
+		if(!num_points_.empty())
+		{ 
+			int count = 0;
+			for(unsigned int i=0; i<num_points_.size(); i++)
+			{
+				//printf("n_point: %.2f\t", num_points_[i]);
+				if(num_points_[i] >= numpoint_cost_limit_)
+				{
+					count++;
+				}
+			}
+			printf("\n");
+			printf("count: %i, size: %i, per: %.2f.\n", count, (int)num_points_.size(), ((float)count/(float)num_points_.size()));
+			
+			if(((float)count/(float)num_points_.size()) >= percentage_limit_ && current_size_ < max_size_)
+			{
+				//printf("Increase planning size!\n\n");
 				
-		} else
-			num_points = 1.0;
+				pcl_filters::ChangeCropboxSize srv;
+				current_size_ = current_size_ + 2.0;
+				if(current_size_ > max_size_) { 
+					current_size_ = max_size_;
+				}
+				printf("THRES: %.2f, INCREASING PLANNING SIZE TO %.2f!!!\n\n", threshold_frontier_, current_size_);
+				size_x_ = size_y_ = size_z_ = current_size_*2.0;
+				max_planning_dist_ = sqrt((size_x_*size_x_)+(size_y_*size_y_)+(size_z_*size_z_));
+				srv.request.size = current_size_; 
+				if(rrtfloor.call(srv))
+				{
+					bool outbounds = srv.response.outofbounds;
+				}
+				if(features.call(srv))
+				{
+					bool outbounds = srv.response.outofbounds;
+				}
+				float newsize = current_size_+2.0; 
+				srv.request.size = newsize;
+				if(explore.call(srv))
+				{
+					bool outbounds = srv.response.outofbounds;
+				}
+				//rrt_planners::ChangeSolveTime t_srv;
+				//t_srv.request.solve_time = rrt_time_; 
+				ros::NodeHandle nd("~");
+				float st = 4.0;
+				nd.getParam("RRT_ros_wrapper/rrt_solve_time", st);
+				printf("RRT solve time readed: %.2f\n", st);
+				std_msgs::Float32 msg;
+				msg.data = st + 0.8;
+				rrt_time_pub_.publish(msg);
+				nd.setParam("RRT_ros_wrapper/rrt_solve_time", msg.data);
+				nd.getParam("RRT_ros_wrapper/rrt_solve_time", st);
+				printf("RRT solve time updated: %.2f\n", st);
+				
+				/*if(first_rrt_time_) {
+					t_srv.request.solve_time = rrt_time_;
+					printf("first time. solve_time: %.2f\n", t_srv.request.solve_time);
+					if(rrttime.call(t_srv))
+					{
+						rrt_time_ = t_srv.response.previous_time;
+					}
+					printf("After calling service\n");
+					t_srv.request.solve_time = rrt_time_ + 0.8;
+					rrttime.call(t_srv);
+					rrt_time_ = t_srv.response.new_time;
+					first_rrt_time_ = false;
+				} else { 
+					t_srv.request.solve_time = rrt_time_ + 0.8;
+					rrttime.call(t_srv);
+					rrt_time_ = t_srv.response.new_time;
+				}*/
+				
+				 
+				
+			} else if(current_size_ > min_size_){
+				//printf("Decrease planning size!\n\n");
+				
+				pcl_filters::ChangeCropboxSize srv;
+				current_size_ = current_size_ - 2.0;
+				if(current_size_ < min_size_) { 
+					current_size_ = min_size_;
+				}
+				printf("THRES: %.2f, DECREASING PLANNING SIZE TO %.2f!!!\n\n", threshold_frontier_, current_size_);
+				size_x_ = size_y_ = size_z_ = current_size_*2.0;
+				max_planning_dist_ = sqrt((size_x_*size_x_)+(size_y_*size_y_)+(size_z_*size_z_));
+				srv.request.size = current_size_; 
+				if(!rrtfloor.call(srv))
+				{
+					bool outbounds = srv.response.outofbounds;
+				}
+				if(!features.call(srv))
+				{
+					bool outbounds = srv.response.outofbounds;
+				}
+				float newsize = current_size_+ 2.0; 
+				srv.request.size = newsize;
+				if(!explore.call(srv))
+				{
+					bool outbounds = srv.response.outofbounds;
+				}
+				//rrt_planners::ChangeSolveTime t_srv;
+				//t_srv.request.solve_time = rrt_time_ - 0.8;
+				//rrttime.call(t_srv);
+				//rrt_time_ = t_srv.response.new_time;
+				ros::NodeHandle nd("~");
+				float st = 4.0;
+				nd.getParam("RRT_ros_wrapper/rrt_solve_time", st);
+				printf("RRT solve time readed: %.2f\n", st);
+				std_msgs::Float32 msg;
+				msg.data = st - 0.8;
+				rrt_time_pub_.publish(msg);
+				nd.setParam("RRT_ros_wrapper/rrt_solve_time", msg.data);
+				nd.getParam("RRT_ros_wrapper/rrt_solve_time", st);
+				printf("RRT solve time updated: %.2f\n", st);
+			}
 			
-		float dcost = no_return_cost(&st);
+			num_points_.clear();
 			
-		tree_mutex_.unlock();
-		
-		float cost = 0.45*num_points + 0.35*dcost; // + 0.1*point_dist + 0.1*stddev;
-		gain_info.push_back(cost);
-		
-		l.id = i+300;
-		//l.text = std::to_string(cost);
-		l.pose.position = points->at(i);
-		l.pose.orientation = tf::createQuaternionMsgFromYaw(0.0);
-		//printf(", id: %i, pcost: %.3f, dcost: %.3f, totalc: %.3f\n", (int)l.id, num_points, dcost, cost);
-		ma.markers.push_back(l);
-		t.id = i+600;
-		t.pose.position = points->at(i);
-		t.pose.position.z = t.pose.position.z + 0.05; 
-		t.pose.orientation = tf::createQuaternionMsgFromYaw(0.0);
-		t.text = std::to_string(cost);
-		ma.markers.push_back(t);
-	 
+		} else if(current_size_ < max_size_){
+			//if the num_points is empty, we have not detected frontiers -> increase size
+			
+			pcl_filters::ChangeCropboxSize srv;
+			current_size_ = current_size_ + 2.0;
+			if(current_size_ > max_size_) { 
+				current_size_ = max_size_;
+			}
+			printf("NO FRONTIERS FOUND. THRES: %.2f, INCREASING PLANNING SIZE TO %.2f!!!\n\n", threshold_frontier_, current_size_);
+			size_x_ = size_y_ = size_z_ = current_size_*2.0;
+			max_planning_dist_ = sqrt((size_x_*size_x_)+(size_y_*size_y_)+(size_z_*size_z_));
+			srv.request.size = current_size_; 
+			if(rrtfloor.call(srv))
+			{
+				bool outbounds = srv.response.outofbounds;
+			}
+			if(features.call(srv))
+			{
+				bool outbounds = srv.response.outofbounds;
+			}
+			float newsize = current_size_+2.0; 
+			srv.request.size = newsize;
+			if(explore.call(srv))
+			{
+				bool outbounds = srv.response.outofbounds;
+			}
+			//rrt_planners::ChangeSolveTime t_srv;
+			//t_srv.request.solve_time = rrt_time_; 
+			ros::NodeHandle nd("~");
+			float st = 4.0;
+			nd.getParam("RRT_ros_wrapper/rrt_solve_time", st);
+			printf("RRT solve time readed: %.2f\n", st);
+			std_msgs::Float32 msg;
+			msg.data = st + 0.8;
+			rrt_time_pub_.publish(msg);
+			nd.setParam("RRT_ros_wrapper/rrt_solve_time", msg.data);
+			nd.getParam("RRT_ros_wrapper/rrt_solve_time", st);
+			printf("RRT solve time updated: %.2f\n", st);
+			
+			
+		} else if(adaptative_threshold_){
+			//last option, we increase the tolerable cost of the void detection
+			ros::NodeHandle nd("~");
+			threshold_frontier_ = threshold_frontier_ + 0.1;
+			numpoint_cost_limit_ = threshold_frontier_ - 0.05;
+			if(threshold_frontier_ > 0.9) {
+				threshold_frontier_ = 0.9;
+				numpoint_cost_limit_ = threshold_frontier_ + 0.05;
+			}
+			printf("NO FRONTIERS FOUND. INCREASING VOID DETECTION THRESHOLD TO %.2f!!!\n\n", threshold_frontier_);
+			nd.setParam("threshold_frontier", threshold_frontier_);
+			float f;
+			nd.getParam("threshold_frontier", f);
+			printf("threshold frontier updated: %.2f\n", f);
+		}
 	}
 	
-	explore_pub_.publish(ma);
-	return gain_info;
+
+	//Fill and store the struct exp_goal
+	exp_goal g;
+	g.p = p;
+	g.num_points = num_points;
+	g.visits = 1;
+	exp_regions_.push_back(g);
+
+
+	return ind_goal;
+	
+	
+
 }
 
 
@@ -686,7 +1194,7 @@ bool nav3d::Features3D::pose3dValid(geometry_msgs::PoseStamped* s)
 		tree_mutex_.unlock();
 				
 		if(pointIdxRadiusSearch.size() < min_points_allowed_) {
-			printf("%s. pose3dValid. %u points found. Minimum: %i\n", name_.c_str(), (unsigned int)pointIdxRadiusSearch.size(), min_points_allowed_);
+			//printf("%s. pose3dValid. %u points found. Minimum: %i\n", name_.c_str(), (unsigned int)pointIdxRadiusSearch.size(), min_points_allowed_);
 			return false;
 		}
 
@@ -713,7 +1221,7 @@ bool nav3d::Features3D::pose3dValid(geometry_msgs::PoseStamped* s)
 	
 	} else {
 		tree_mutex_.unlock();
-		printf("%s. pose3dValid. kdtree found %i neighbors in the radius %.2f\n", name_.c_str(), found, robot_radius_);
+		//printf("%s. pose3dValid. kdtree found %i neighbors in the radius %.2f\n", name_.c_str(), found, robot_radius_);
 		return false;
 	}
 

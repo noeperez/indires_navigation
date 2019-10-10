@@ -1,9 +1,10 @@
-#include <rrt_planners/planners/simple/SimpleRRTstar.h>
+#include <rrt_planners/planners/simple/SimpleQuickRRTstar.h>
 
-RRT::SimpleRRTstar::SimpleRRTstar() : Planner() {
+RRT::SimpleQuickRRTstar::SimpleQuickRRTstar() : Planner() {
 	
 	maxRange_ = 0.5;
 	useKnearest_ = false;
+	depth_ = 1;
 	k_rrt_ = 0.0;
 	r_rrt_ = 0.0;
 	rewire_factor_ = 1.1;
@@ -15,18 +16,18 @@ RRT::SimpleRRTstar::SimpleRRTstar() : Planner() {
 
 }
 
-RRT::SimpleRRTstar::~SimpleRRTstar() {
+RRT::SimpleQuickRRTstar::~SimpleQuickRRTstar() {
 
 }
 
 
-RRT::State* RRT::SimpleRRTstar::steer(State* fromState, State* toState, std::vector<State>& istates)
+RRT::State* RRT::SimpleQuickRRTstar::steer(State* fromState, State* toState, std::vector<State>& istates)
 {
 	return  steering_->simple3dSteer(fromState, toState, istates);
 }
 
 
-bool RRT::SimpleRRTstar::collisionFree(State* fromState, State* toState, std::vector<State>& istates)
+bool RRT::SimpleQuickRRTstar::collisionFree(State* fromState, State* toState, std::vector<State>& istates)
 {
 	return  steering_->simple3dCollisionFree(fromState, toState, istates);
 }
@@ -34,7 +35,7 @@ bool RRT::SimpleRRTstar::collisionFree(State* fromState, State* toState, std::ve
 
 
 
-std::vector<RRT::Node> RRT::SimpleRRTstar::solve(float secs)
+std::vector<RRT::Node> RRT::SimpleQuickRRTstar::solve(float secs)
 {
 	/******************************************************************************************
 	V<-{Xinit}, E<-0;
@@ -184,6 +185,12 @@ std::vector<RRT::Node> RRT::SimpleRRTstar::solve(float secs)
 			std::vector<RRT::Node*> nbrs;
 			getNearestNeighbors(newNode, nbrs);
 			//printf("Neighbors obtained: %u\n", (unsigned int)nbrs.size());
+
+
+			//Quick RRT* - Add the parents of the neirest neighbors
+			getAncestors(nbrs, depth_);
+			
+
 			
 			Node* node_min = nearNode;
 			float inc_cost = steering_->motionCost(nearNode, newNode);
@@ -258,7 +265,6 @@ std::vector<RRT::Node> RRT::SimpleRRTstar::solve(float secs)
 				
 			}*/	
 			
-		
 			for(unsigned int i=0; i<nbrs.size(); i++)
 			{
 				if(nbrs[i] != node_min) //&& collisionFree(newState, nbrs_aux[i]->getState())  //Only valid for non-kinematics RRT*
@@ -268,7 +274,8 @@ std::vector<RRT::Node> RRT::SimpleRRTstar::solve(float secs)
 						bool colfree = false;
 						for(unsigned int f=0; f<nbrs_ind.size(); f++)
 						{
-							if(nbrs_ind[f] == i){
+							if(nbrs_ind[f] == i)
+							{
 								colfree=true;
 								break;
 							}
@@ -424,7 +431,59 @@ std::vector<RRT::Node> RRT::SimpleRRTstar::solve(float secs)
 }
 
 
-void RRT::SimpleRRTstar::getNearestNeighbors(Node* node, std::vector<Node*> &nbrs) 
+
+
+
+void RRT::SimpleQuickRRTstar::getAncestors(std::vector<Node*> &nbrs, int depth) 
+{
+	//printf("Neighbors size: %u\n", (unsigned int)nbrs.size());
+	std::vector<Node*> aux;	
+	for(unsigned int i=0; i<nbrs.size(); i++)
+	{
+		std::vector<Node*> parents;
+		Node* n = nbrs[i];
+		//Store the parents of nbrs[i] to depth
+		for(unsigned int j=0; j<depth; j++) {
+			if(n->getParent() != NULL)
+			{
+				parents.push_back(n->getParent());
+				n = n->getParent();
+			}
+		}
+
+		for(unsigned int h=0; h<parents.size(); h++)
+		{
+			if(aux.empty()) {
+				//aux.insert(std::end(aux), std::begin(parents), std::end(parents));
+				aux.insert(aux.end(), parents.begin(), parents.end());
+			}
+			else {
+				bool insert = true;
+				for(unsigned int k=0; k<aux.size(); k++)
+				{
+					if(parents[h] == aux[k]){
+						insert = false;
+						break;
+					}
+				}
+				if(insert)
+					aux.push_back(parents[h]);
+			}
+		}
+	
+	}
+
+	//Add the parents to nbrs
+	nbrs.insert(nbrs.end(), aux.begin(), aux.end());
+	//printf("New Neighbors size: %u\n", (unsigned int)nbrs.size());
+}
+
+
+
+
+
+
+void RRT::SimpleQuickRRTstar::getNearestNeighbors(Node* node, std::vector<Node*> &nbrs) 
 {
 	
 	double size = static_cast<double>(nn_->size() + 1u);
@@ -443,7 +502,7 @@ void RRT::SimpleRRTstar::getNearestNeighbors(Node* node, std::vector<Node*> &nbr
 	}
 }
 
-void RRT::SimpleRRTstar::calculateParamsNearest() {
+void RRT::SimpleQuickRRTstar::calculateParamsNearest() {
 
 	double dim = (double)space_->getDimensions();
 
@@ -460,7 +519,7 @@ void RRT::SimpleRRTstar::calculateParamsNearest() {
 }
 
 
-/*float RRT::SimpleRRTstar::motionCost(Node* n1, Node* n2) {
+/*float RRT::SimpleQuickRRTstar::motionCost(Node* n1, Node* n2) {
 	
 	float dist = sqrt(distanceFunction(n1, n2));
 	//Normalize

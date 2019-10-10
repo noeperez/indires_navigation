@@ -21,7 +21,7 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
   tf
-  #upo_msgs
+  pcl_filters
   nav_msgs
   visualization_msgs
   #message_generation
@@ -139,12 +139,12 @@ catkin_package(
 	rospy 
 	std_msgs 
 	tf 
-	#upo_msgs 
+	pcl_filters 
 	nav_msgs 
 	visualization_msgs
 	#message_runtime
 	#dynamic_reconfigure
-#  DEPENDS system_lib
+  DEPENDS system_lib
 )
 
 ###########

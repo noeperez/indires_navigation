@@ -45,6 +45,9 @@ PCL_INSTANTIATE(Search, PCL_POINT_TYPES)
 #include <geometry_msgs/PoseStamped.h>
 #include <tf/transform_listener.h>
 #include <pcl_ros/transforms.h>
+//ROS service
+#include "pcl_filters/GetFilteredPC.h"
+#include "pcl_filters/ChangeCropboxSize.h"
 
 //Eigen
 #include <Eigen/Geometry>
@@ -75,12 +78,17 @@ std::string pc_frame;
 bool use_robot_pose = false;
 bool filter_ceiling = false;
 float local_grid_radius = 3.0;
+float min_grid_size = 5.0;
+float max_grid_size = 11.0;
+std::mutex  size_mutex;
 float max_height_allowed = 2.0;
 std::string robot_pose_topic;
 std::string odom_frame;
 std::string sensor_frame;
 geometry_msgs::PoseStamped robot_pose;
 std::mutex mutex; 
+std::mutex pc_mutex;
+sensor_msgs::PointCloud2 pc;
 
 bool print_arrows = false;
 
@@ -95,9 +103,12 @@ double roll_low;
 double roll_high;
 
 
-
+bool publish_topic = true;
+bool use_service = false;
 ros::Publisher pc_pub;
 ros::Publisher arrow_pub;
+ros::ServiceServer service;
+ros::ServiceServer change_size_service;
 
 tf::TransformListener *listener;
 
@@ -169,7 +180,7 @@ geometry_msgs::PoseStamped transformPoseTo(geometry_msgs::PoseStamped pose_in, s
 	try {
 		listener->transformPose(frame_out.c_str(), in, pose_out);
 	}catch (tf::TransformException ex){
-		ROS_WARN("pcl_filters. TransformException in method transformPoseTo. TargetFrame: %s : %s", frame_out.c_str(), ex.what());
+		ROS_WARN("pcl_filters. TransformException in method transformPoseTo. TargetFrame: %s, source_frame: %s. message error: %s", frame_out.c_str(), in.header.frame_id.c_str(), ex.what());
 	}
 	//printf("Tranform pose. frame_in: %s, x:%.2f, y:%.2f, frame_out: %s, x:%.2f, y:%.2f\n", in.header.frame_id.c_str(), in.pose.position.x, in.pose.position.y, frame_out.c_str(), pose_out.pose.position.x, pose_out.pose.position.y);
 	return pose_out;
@@ -426,18 +437,13 @@ This will directly modify cloud_in instead of creating a copy of the cloud
 
 
 
-
-
-
-
-
-
-void pcCallback(const sensor_msgs::PointCloud2ConstPtr &msg)
+sensor_msgs::PointCloud2 applyFilters()
 {
-
 	//Transform the coordinates of the pointcloud
 	sensor_msgs::PointCloud2 local;
-	pcl_ros::transformPointCloud(odom_frame, *msg, local, *listener);
+	pc_mutex.lock();
+	pcl_ros::transformPointCloud(odom_frame, pc, local, *listener);
+	pc_mutex.unlock();
 
 	//pc_frame = msg->header.frame_id;
 	
@@ -521,12 +527,14 @@ void pcCallback(const sensor_msgs::PointCloud2ConstPtr &msg)
 			//geometry_msgs::PoseStamped p;
 			//p = transformPoseTo(pose, odom_frame, true);
 			
+			size_mutex.lock();
 			float min_x = p.pose.position.x - local_grid_radius;
 			float max_x = p.pose.position.x + local_grid_radius;
 			float min_y = p.pose.position.y - local_grid_radius;
 			float max_y = p.pose.position.y + local_grid_radius;
 			float min_z = p.pose.position.z - local_grid_radius;
 			float max_z = p.pose.position.z + local_grid_radius;
+			size_mutex.unlock();
 
 			box->setMin(Eigen::Vector4f(min_x, min_y, min_z, 1.0));
 			box->setMax(Eigen::Vector4f(max_x, max_y, max_z, 1.0));
@@ -570,10 +578,6 @@ void pcCallback(const sensor_msgs::PointCloud2ConstPtr &msg)
 		
 	}
 	
-	
-	
-
-
 	pcl::toROSMsg(*cloud, pc_out);
 
 
@@ -581,10 +585,60 @@ void pcCallback(const sensor_msgs::PointCloud2ConstPtr &msg)
 	//sensor_msgs::PointCloud2 local;
 	//pcl_ros::transformPointCloud("/indires_rover/base_link", pc_out, local, *listener);
 
-	pc_pub.publish(pc_out);
+	//pc_pub.publish(pc_out);
 	//pc_pub.publish(local);
+	return pc_out;
+	
+}
 
 
+
+
+
+bool getFilteredPointCloud(pcl_filters::GetFilteredPC::Request  &req,
+         pcl_filters::GetFilteredPC::Response &res)
+{
+  res.pc = applyFilters();
+  //ROS_INFO("sending back response: [%ld]", (long int)res.sum);
+  return true;
+}
+
+
+
+bool changeCroppingSize(pcl_filters::ChangeCropboxSize::Request &req,
+		pcl_filters::ChangeCropboxSize::Response &res)
+{
+	float s = req.size;
+	res.outofbounds = false;
+	if(s < 1.0)
+	{
+		res.outofbounds = true;
+		return true;
+	} else {
+		size_mutex.lock();
+		local_grid_radius = s;
+		ros::NodeHandle nh("~");
+		nh.setParam("local_grid_radius", s);
+		size_mutex.unlock();
+	}
+	return true;
+}
+
+
+
+
+
+void pcCallback(const sensor_msgs::PointCloud2ConstPtr &msg)
+{
+	pc_mutex.lock();
+	pc = *msg;
+	pc_mutex.unlock();
+
+	if(publish_topic)
+	{
+		sensor_msgs::PointCloud2 pc_out = applyFilters();
+		pc_pub.publish(pc_out);
+	}
 }
 
 
@@ -630,6 +684,10 @@ int main(int argc, char **argv)
 	nh.getParam("pointcloud_topic", pointcloud_topic);
 	std::string output_topic = "PointCloud_filtered";
 	nh.getParam("output_topic", output_topic);
+	
+	
+	nh.getParam("publish_topic", publish_topic);
+	nh.getParam("use_service", use_service);
 
 	nh.getParam("use_robot_pose", use_robot_pose);
 	nh.getParam("robot_pose_topic", robot_pose_topic);
@@ -774,10 +832,21 @@ int main(int argc, char **argv)
 
 
 
-	arrow_pub = nh.advertise<visualization_msgs::MarkerArray>( "pcl_filter_arrows", 0);
-	//filter_pub = nh.advertise<visualization_msgs::MarkerArray>( "NDTMAP_TRANS", 0);
-	pc_pub = nh.advertise<sensor_msgs::PointCloud2>( output_topic, 0);
-
+	
+	if(publish_topic)
+	{
+		pc_pub = nh.advertise<sensor_msgs::PointCloud2>( output_topic, 0);
+		arrow_pub = nh.advertise<visualization_msgs::MarkerArray>( "pcl_filter_arrows", 0);
+	}
+	if(use_service) {
+		ROS_INFO("ADVERSTING SERVICE...");
+		service = nh.advertiseService("get_filtered_pc", getFilteredPointCloud);
+		ROS_INFO("SERVICE ADVERSTISED");
+	}
+	
+	change_size_service = nh.advertiseService("change_cropbox_size", changeCroppingSize);
+	
+	
 	ros::Subscriber sub;
 	sub  = n.subscribe(pointcloud_topic, 1, pcCallback);
 

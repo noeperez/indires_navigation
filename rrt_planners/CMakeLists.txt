@@ -3,6 +3,7 @@ project(rrt_planners)
 
 ## Add support for C++11, supported in ROS Kinetic and newer
 add_definitions(-std=c++11)
+add_compile_options(-std=c++11)
 
 set (CMAKE_BUILD_TYPE Debug)
 find_package(catkin REQUIRED
@@ -69,6 +70,7 @@ add_service_files(
 #   PointCosts.srv
 	MakePlan.srv
 #	MakePlanCostmap.srv
+#	ChangeSolveTime.srv
 )
 
 generate_messages(
@@ -107,6 +109,7 @@ add_library(rrt_planners
 	src/planners/Planner.cpp
 	src/planners/simple/SimpleRRT.cpp
 	src/planners/simple/SimpleRRTstar.cpp
+	src/planners/simple/SimpleQuickRRTstar.cpp
 	src/planners/control/Rrt.cpp
 	src/planners/control/RRTstar.cpp
 	src/planners/control/HalfRRTstar.cpp

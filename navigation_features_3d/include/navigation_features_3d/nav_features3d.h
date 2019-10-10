@@ -15,6 +15,7 @@
 #include <geometry_msgs/Pose2D.h>
 #include <tf/transform_datatypes.h>
 #include <tf/transform_listener.h>
+#include <std_msgs/Float32.h>
 //#include <nav_msgs/OccupancyGrid.h>
 //#include <upo_msgs/PersonPoseUPO.h>
 //#include <upo_msgs/PersonPoseArrayUPO.h>
@@ -56,6 +57,14 @@ PCL_INSTANTIATE(Search, PCL_POINT_TYPES)
 #include <pcl/search/pcl_search.h>
 #include <pcl/features/normal_3d.h>
 #include <pcl/segmentation/extract_clusters.h>
+#include <pcl/ModelCoefficients.h>
+#include <pcl/sample_consensus/method_types.h>
+#include <pcl/sample_consensus/model_types.h>
+#include <pcl/sample_consensus/sac.h>
+#include <pcl/sample_consensus/ransac.h>
+#include <pcl/sample_consensus/sac_model_perpendicular_plane.h>
+#include <pcl/segmentation/sac_segmentation.h>
+#include <pcl/filters/voxel_grid_covariance.h>
 //#include <pcl/octree/octree.h>
 //#include <pcl/octree/octree_search.h>
 //#include <pcl/search/octree.h>
@@ -78,6 +87,9 @@ PCL_INSTANTIATE(Search, PCL_POINT_TYPES)
 
 
 //Service msg
+#include "pcl_filters/GetFilteredPC.h"
+#include "pcl_filters/ChangeCropboxSize.h"
+//#include "rrt_planners/ChangeSolveTime.h"
 //#include <navigation_features/SetWeights.h>
 //#include <navigation_features/SetLossCost.h>
 //#include <navigation_features/SetScenario.h>
@@ -98,25 +110,18 @@ namespace nav3d {
 	class Features3D {
 
 		public:
-		
-			/*enum gaussian_type{
-				FRONT, 
-				BACK, 
-				LEFT, 
-				RIGHT, 
-				AROUND, 
-				FRONT_APPROACH,
-				AROUND_APPROACH
+
+			struct exp_goal {
+  				geometry_msgs::Point p;
+  				float num_points;
+				int visits;
 			};
-			
-			enum dist_type{LINEAR_INC,LOG_INC,EXP_INC,INVERSE_DEC,LOG_DEC,EXP_DEC};
-			*/
 
 			Features3D();
 			
 			Features3D(std::string name, tf::TransformListener* tf, float size_x, float size_y, float size_z);
 			
-			//NavFeatures(tf::TransformListener* tf, const costmap_2d::Costmap2D* loc_costmap, const costmap_2d::Costmap2D* glob_costmap, std::vector<geometry_msgs::Point>* footprint, float insc_radius, float size_x, float size_y);
+			
 
 			Features3D(std::string name, tf::TransformListener* tf, vector<geometry_msgs::Point>* footprint, float size_x, float size_y, float size_z);
 
@@ -136,9 +141,13 @@ namespace nav3d {
 			
 			
 			std::vector<std::vector<int> > clusterize_leaves(std::vector<geometry_msgs::Point>* points, float radius);
-			std::vector<float> evaluate_leaves(std::vector<geometry_msgs::Point>* points, std::string frame, float radius);
-			float evaluate_leaf(geometry_msgs::Point* p, float rrt_cost, std::string frame, float radius);
+			int evaluate_leaves(std::vector<geometry_msgs::Point>* points, std::vector<float>* pcosts, std::string frame, float radius);
+			float evaluate_leaf(geometry_msgs::Point* p, float rrt_cost, std::string frame, float radius, float &npoints);
+			//float evaluate_leaf_nfe_bfe(geometry_msgs::Point* p, float rrt_cost, std::string frame, float radius, float &npoints);
 			float no_return_cost(geometry_msgs::PoseStamped* p);
+			
+			
+			
 			
 
 			//std::vector<float> getPathFeatureCount(vector<geometry_msgs::PoseStamped>* path);
@@ -207,8 +216,22 @@ namespace nav3d {
 			std::string							name_;
 		
 			ros::Subscriber 					cloud_sub_;
+			ros::ServiceClient 					exp_client_;
+			std::string 						exp_pc_service_name_;
+			pcl::KdTreeFLANN<pcl::PointXYZ>*	kdtree_exp_;
+			pcl::PointCloud<pcl::PointXYZ>::Ptr	exp_cloud_;
+			pcl::VoxelGridCovariance<pcl::PointXYZ>* vgc_;
+			float 								cell_size_;
+			std::vector<pcl::PointXYZ>			wall_points_;
+			ros::Publisher 						wall_pub_;
+			std::vector<geometry_msgs::Point>	frontier_points_;
+			ros::Publisher 						frontier_pub_;
 			sensor_msgs::PointCloud2 			cloud_;
 			pcl::PointCloud<pcl::PointXYZ>		pcl_cloud_;
+			pcl::PointCloud<pcl::PointXYZ>		wall_cloud_;
+			ros::Publisher						pc_wall_pub_;
+			std::vector<float>					num_points_;
+			float 								num_points_saturation_;
 			//mutex 								cloudMutex_;
 
 
@@ -238,6 +261,11 @@ namespace nav3d {
 			//double 								roll_low2_;
 			double								roughness_;
 			int 								min_points_allowed_;
+			
+			double 								pitch_high2_;
+			double 								pitch_low2_;
+			double 								roll_high2_;
+			double 								roll_low2_;
 
 			
 			int									feature_set_;
@@ -261,6 +289,9 @@ namespace nav3d {
 			float 								size_x_;
 			float 								size_y_;
 			float								size_z_;
+			float 								current_size_;
+			float 								max_size_;
+			float 								min_size_;
 
 			ros::NodeHandle 					nh_;
 		
@@ -270,7 +301,21 @@ namespace nav3d {
 			vector<float>						wexp_;
 			
 			ros::Publisher						explore_pub_;
-			bool								nfe_exploration_;
+			bool								nfe_; 	//Neirest Frontier Exploration
+			bool								bfe_;	//Biggest Frontier Exploration
+			float 								threshold_frontier_;
+			bool 								adaptative_threshold_;
+			vector<exp_goal>					exp_regions_;
+			float 								exp_min_dist_goals_;
+			float 								numpoint_cost_limit_;
+			float 								percentage_limit_;
+			bool 								first_rrt_time_;
+			float 								rrt_time_;
+			ros::Publisher						rrt_time_pub_;
+			
+			bool 								visited_region_enabled_;
+			bool 								remove_wall_frontier_enabled_;
+			bool  								variable_size_enabled_;
 
 			
 			

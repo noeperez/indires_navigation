@@ -26,8 +26,8 @@ RRT_ros::ValidityChecker3D::ValidityChecker3D(tf::TransformListener* tf, std::ve
 	rrt_planner_type_ = 2;
 	nh.getParam("rrt_planner_type", rrt_planner_type_);
 	
-	nfe_exploration_ = false;
-	nh.getParam("nfe_exploration", nfe_exploration_);
+	//nfe_exploration_ = false;
+	//nh.getParam("nfe_exploration", nfe_exploration_);
 	
 	std::string features_name("navigation_features_3d");
 	nh.getParam("features_name", features_name);
@@ -390,13 +390,14 @@ std::vector<RRT::Node*> RRT_ros::ValidityChecker3D::clusterize_leaves(std::vecto
 
 
 
-/*
+
 RRT::Node* RRT_ros::ValidityChecker3D::evaluate_exploration(std::vector<RRT::Node*>* leaves) const
 {
 	
-	float radius = 2.0;
-	printf("ValidityChecker3D. evaluate_exploration called!\n");
+	float radius = 1.5;
+	//printf("ValidityChecker3D. evaluate_exploration called!\n");
 	std::vector<geometry_msgs::Point> points;
+	std::vector<float> costs;
 	for(unsigned int i=0; i<leaves->size(); i++)
 	{
 		geometry_msgs::Point p;
@@ -404,10 +405,16 @@ RRT::Node* RRT_ros::ValidityChecker3D::evaluate_exploration(std::vector<RRT::Nod
 		p.y = leaves->at(i)->getState()->getY();
 		p.z = leaves->at(i)->getState()->getZ();
 		points.push_back(p);
+		if(rrt_planner_type_ == 1 || rrt_planner_type_ == 4)
+			costs.push_back(-1.0);
+		else
+			costs.push_back(leaves->at(i)->getAccCost());
+		
 	}
-	std::vector<float> gain_info = features_->evaluate_leaves(&points, planning_frame_, radius);
+	//std::vector<float> gain_info = features_->evaluate_leaves(&points, planning_frame_, radius);
+	int ind_goal = features_->evaluate_leaves(&points, &costs, planning_frame_, radius);
 	
-	float min_cost = 100.0;
+	/*float min_cost = 100.0;
 	int ind_goal;
 	float exploration_cost;
 	for(unsigned int i=0; i<leaves->size(); i++)
@@ -426,15 +433,15 @@ RRT::Node* RRT_ros::ValidityChecker3D::evaluate_exploration(std::vector<RRT::Nod
 			min_cost = exploration_cost;
 			ind_goal = i;
 		}
-	}
+	}*/
 	
 	return leaves->at(ind_goal);
 	
-}*/
+}
 
 
 
-
+/*
 RRT::Node* RRT_ros::ValidityChecker3D::evaluate_exploration(std::vector<RRT::Node*>* leaves) const
 {
 	
@@ -455,7 +462,7 @@ RRT::Node* RRT_ros::ValidityChecker3D::evaluate_exploration(std::vector<RRT::Nod
 	float exploration_cost;
 	for(unsigned int i=0; i<leaves->size(); i++)
 	{	
-		if(rrt_planner_type_ == 1 || rrt_planner_type_ == 3 || nfe_exploration_) //RRT (no star)
+		if(rrt_planner_type_ == 1 || rrt_planner_type_ == 4 || nfe_exploration_) //RRT (no star)
 		{
 			exploration_cost = features_->evaluate_leaf(&points[i], -1.0, planning_frame_, radius);
 		}else {
@@ -470,7 +477,7 @@ RRT::Node* RRT_ros::ValidityChecker3D::evaluate_exploration(std::vector<RRT::Nod
 	
 	return leaves->at(ind_goal);
 	
-}
+}*/
 
 
 

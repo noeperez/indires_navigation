@@ -94,9 +94,6 @@ Using a point cloud as sample space instead of uniform sampling of the space:
 
 The upo_rrt_planners library uses nearest neighbor data structures through the FLANN library. See: M. Muja and D.G. Lowe, "Fast Approximate Nearest Neighbors with Automatic Algorithm Configuration", in International Conference on Computer Vision Theory and Applications (VISAPP'09), 2009. http://people.cs.ubc.ca/~mariusm/index.php/FLANN/FLANN
 
-#### TODO 
-- [ ] Add the rest of RRT algorithms.
-- [ ] Add a plugin to be used as a global planner in the move_base architecture of ROS.
 
 
 The package is a **work in progress** used in research prototyping. Pull requests and/or issues are highly encouraged.

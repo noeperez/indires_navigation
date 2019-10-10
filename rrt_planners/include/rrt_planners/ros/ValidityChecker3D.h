@@ -132,7 +132,7 @@ namespace RRT_ros
 		
 		int 								rrt_planner_type_;
 		
-		bool								nfe_exploration_;
+		//bool								nfe_exploration_;
 		
 
 	};

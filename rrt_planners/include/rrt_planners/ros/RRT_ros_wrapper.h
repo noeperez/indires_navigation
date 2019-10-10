@@ -54,11 +54,13 @@
 #include <rrt_planners/planners/Planner.h>
 #include <rrt_planners/planners/simple/SimpleRRT.h>
 #include <rrt_planners/planners/simple/SimpleRRTstar.h>
+#include <rrt_planners/planners/simple/SimpleQuickRRTstar.h>
 #include <rrt_planners/planners/control/Rrt.h>
 #include <rrt_planners/planners/control/RRTstar.h>
 #include <rrt_planners/planners/control/HalfRRTstar.h>
 //Planning service
 #include <rrt_planners/MakePlan.h>
+#include <rrt_planners/ChangeSolveTime.h>
 
 //#include <rrt_planners/ros/ValidityChecker.h>
 #include <rrt_planners/ros/ValidityChecker3D.h>
@@ -129,6 +131,10 @@ namespace RRT_ros {
 			
 			//Planning service
 			bool makePlanService(rrt_planners::MakePlan::Request &req, rrt_planners::MakePlan::Response &res);
+			//Change the RRT solve time service
+			//bool changeTimeService(rrt_planners::ChangeSolveTime::Request &req, rrt_planners::ChangeSolveTime::Response &res);
+			void rrttimeCallback(const std_msgs::Float32ConstPtr &msg);
+			bool change_rrt_time(float time);
 			
 			
 			//std::vector<float> get_features_count(geometry_msgs::PoseStamped* goal, std::vector<geometry_msgs::PoseStamped>* path, upo_msgs::PersonPoseArrayUPO* people);
@@ -200,10 +206,14 @@ namespace RRT_ros {
 			//RRT
 			RRT::Planner*					rrt_planner_;
 			float							solve_time_;
+			mutex							solvetime_mutex_;
+			//ros::ServiceServer 				solvetime_srv_;
+			ros::Subscriber 				solvetime_sub_;
 			std::vector<geometry_msgs::PoseStamped> rrt_plan_;
 			RRT_ros::ValidityChecker3D*	 	checker_;
 			int 							rrt_planner_type_;
 			ros::ServiceServer 				plan_srv_;
+			
 
 
 			bool							use_external_pc_samples_;
@@ -289,6 +299,9 @@ namespace RRT_ros {
 			float 							goal_th_tol_;
 			int 							nn_params_;
 			int								distanceType_;
+			
+			//Only for Quick-RRTstar
+			int								depth_;
 			
 	};
 } 
