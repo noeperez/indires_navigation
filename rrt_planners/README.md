@@ -41,7 +41,7 @@ This planner also can work as a global planner in the move_base architecture or 
 
 Only for RRT* planner:
 * **rrtstar_use_k_nearest**. Boolean to indicate whether to use k-nearest or radius search to find the neighbors in the tree.
-* **quick_rrt_depth**. Depth of the parents employed by Quick-RRT* algorithm (in case of bei 
+* **quick_rrt_depth**. Depth of the parents employed by Quick-RRT* algorithm (in case of being using this planner). 
 
 
 Only for kinodynamic planners:
