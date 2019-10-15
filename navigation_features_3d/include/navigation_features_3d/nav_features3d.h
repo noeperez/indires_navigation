@@ -218,7 +218,7 @@ namespace nav3d {
 			ros::Subscriber 					cloud_sub_;
 			ros::ServiceClient 					exp_client_;
 			std::string 						exp_pc_service_name_;
-			pcl::KdTreeFLANN<pcl::PointXYZ>*	kdtree_exp_;
+			//pcl::KdTreeFLANN<pcl::PointXYZ>*	kdtree_exp_;
 			pcl::PointCloud<pcl::PointXYZ>::Ptr	exp_cloud_;
 			pcl::VoxelGridCovariance<pcl::PointXYZ>* vgc_;
 			float 								cell_size_;

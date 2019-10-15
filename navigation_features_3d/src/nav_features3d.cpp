@@ -341,7 +341,8 @@ void nav3d::Features3D::setParams(std::string name)
 
 nav3d::Features3D::~Features3D() {
 	delete kdtree_;
-	delete kdtree_exp_;
+	delete vgc_;
+	//delete kdtree_exp_;
 	//delete octree_;
 }
 
