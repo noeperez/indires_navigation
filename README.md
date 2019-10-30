@@ -13,7 +13,7 @@ C++ Library and ROS wrapper for path planning in 3D. It contains the following p
     - *Quick RRTStar*  [3] : Quick-RRT* planner in x,y,z coordinates without reasoning about kinodynamic constraints.
 
 * *navigation_features_3d*:  
-Package for calculation of sample validity and feature functions employed by the cost function of the RRT planners for robot path planning.
+Package for calculation of sample validity and feature functions employed by the cost functions of the RRT planners for robot path planning and exploration.
 
 * *pcl_filters*:  
 ROS package to apply different filters to pointclouds. It makes use of PCL 1.9.
