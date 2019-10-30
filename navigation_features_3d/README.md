@@ -58,6 +58,13 @@ Package that calculates the feature functions employed by different cost functio
 	- **max_planning_size**: maximum desired size of the boxed area employed in the navigation and exploration. The exploration system changes the planning size dinamically (in the given ranges) based on the number of frontier found and their frontier cost associated. 
 	- **cell_size_grid_exp**: size in meters of the cells of the voxel grid in which the point cloud for exploration is stored. Default: 0.7
 
+## Topics published
+
+* **wall_points**. Visualization markers for RViz of the exploration leaves discarded because they are very close to walls. ROS Message type: visualization_msgs/Marker
+* **frontier_points**. Visualization markers for RViz of the final set of leaves considered as potential exploration frontiers. ROS Message type: visualization_msgs/Marker
+* **visited_regions**. Visualization markers for RViz of regions that have been visited twice and hence discarded as frontier regions. ROS Message type: visualization_msgs/Marker
+
+
 ## Dependences
 
 * **pcl_filters** ros package contained in the metapackage indires_navigation.
