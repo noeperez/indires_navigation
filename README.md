@@ -33,7 +33,7 @@ The regular costmap_2d package of ROS has a dependency on PCL. Therefore, as we 
 
 The following image shows an example of the ros node graph of a complete simulation of the system also using Gazebo as robot and environment simulator.
 
-![alt text](https://github.com/noeperez/indires_navigation/blob/master/indires_navigation/images/rrt_rosgraph.png)
+![alt text](https://github.com/noeperez/indires_navigation/blob/master/indires_navigation/images/rosgraph.png)
 
 
 
