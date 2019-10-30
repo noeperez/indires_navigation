@@ -227,6 +227,10 @@ navigation_features_3d:
 #  wexp4:                      0.2
 
   exp_min_dist_goals:         1.5
+
+  visualize_visited_reg:      true
+  visualize_frontiers:        true
+  visualize_wall_leaves:      true
   
   
 

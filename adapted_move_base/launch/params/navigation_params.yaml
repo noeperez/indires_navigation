@@ -33,8 +33,6 @@ use_global_costmap2d:       false
 use_local_costmap2d:        false
 
 
-# freq of the of the rrt loop in the thread
-#thread_sleep_msecs:         100
 
 
 
@@ -66,18 +64,22 @@ RRT_ros_wrapper:
   # RRT planner to use
   # 1 -> RRT (no kinodynamics)
   # 2 -> RRTstar (no kinodynamics)
-  # 3 -> Kinodynamic RRT
-  # 4 -> Kinodynamic RRTstar 
-  # 5 -> Kinodynamic simplified RRTstar
+  # 3 -> Q-RRTstar (no kinodynamics)
+  # 4 -> Kinodynamic RRT
+  # 5 -> Kinodynamic RRTstar 
+  # 6 -> Kinodynamic simplified RRTstar
   rrt_planner_type:           2 
   rrt_solve_time:             5.0 
   rrt_goal_bias:              0.07 #0.06 #0.05 
-  rrt_max_insertion_dist:     0.25 0.60<-3 0.25<-2  0.50 o 1.0<-4
-  rrt_goal_xyz_tol:           0.15 #0.12
+  rrt_max_insertion_dist:     0.25 #0.60<-3 0.25<-2  0.50 o 1.0<-4
+  rrt_goal_xyz_tol:           0.25 #0.12
   rrt_goal_th_tol:            0.12
   # If we want to interpolate the resulting path
   # if we don't. This value should be 0 or below 0.
   rrt_interpolate_path_dist:  0.1
+
+  #Only in case of using Quick-RRTstar
+  quick_rrt_depth:            1
 
   # path smoothing
   path_smoothing:             true
@@ -89,9 +91,8 @@ RRT_ros_wrapper:
   # use a downsampled point cloud without ceiling and walls
   use_external_pc_as_samples: true
   pc_topic:                   pcl_filters_node_1/rrt_pointcloud_samples  #pcl_filters_node_2/features_pointcloud
-
-  features_name:              navigation_features_3d
   
+  features_name:              navigation_features_3d
 
   planning_frame:             indires_rover/odom
   robot_base_frame:           indires_rover/base_link
@@ -159,7 +160,7 @@ RRT_ros_wrapper:
   show_rrt_statistics:        true
   show_intermediate_states:   false #use only in case of kino
 
-  robot_radius:               0.42  #meters
+  robot_radius:               0.40  #meters
 
 
 
@@ -167,17 +168,16 @@ RRT_ros_wrapper:
 navigation_features_3d:
 
   pointcloud_topic:           pcl_filters_node_2/features_pointcloud #point_map #indires_rover/front_rgbd_camera/front_rgbd_camera/depth/points #pcl_filters_node/PointCloud_filtered 
-  robot_circuns_radius:       0.42
+
+  robot_circuns_radius:       0.40
   max_pitch_inclination:      0.8  #0.79 rad = 45º   0.87 = 50ª
   max_roll_inclination:       0.8
   max_roughness:              0.8 #0.15 #0.8
-  min_points_allowed:         15 #20
+  min_points_allowed:         12 #18 #20
 
   robot_base_frame:           indires_rover/base_link
   robot_odom_frame:           indires_rover/odom
   robot_odom_topic:           indires_rover/odom_filtered  #icp_odom
-  
-  nfe_exploration:            false
   
   feature_set:                2
   
@@ -205,19 +205,43 @@ navigation_features_3d:
                               # goal_dist
   w7:                         0.175
   
-  
-  #Weights for exploration
+  #EXPLORATION
+  exp_pc_service_name:        pcl_filters_node_4/get_filtered_pc
+
+  visited_region_enabled:     true
+  remove_wall_frontier_enabled: true
+  variable_size_enabled:      true
+
+  # if NFE and BFE are false, CFE is used (Cost Function Exploration)
+  nf_exploration:             false
+  bf_exploration:             false
+  threshold_frontier:         0.4   #best=0.4  high=0.65
+  adaptative_threshold:       true
+
+  num_points_saturation:      3200.0
+#  numpoint_cost_limit:        0.62
+  percentage_limit:           0.85
+
+  min_planning_size:          5.0
+  max_planning_size:          13.0
+  cell_size_grid_exp:         0.07
+
+  #Weights for the exploration cost function
                               # num_points
-  wexp1:                      0.4
+  wexp1:                      0.39    
                               # no return   
-  wexp2:                      0.4
+  wexp2:                      0.305    
                               # rrt path cost
-  wexp3:                      0.2
-  
-  
-  # Visualization
-  #publish_cost_pc:            true
-  #cost_topic_pc:              pcl_filters_node_1/rrt_pointcloud_samples 
+  wexp3:                      0.305
+                              # goal cost
+#  wexp4:                      0.2
+
+  exp_min_dist_goals:         1.5
+
+  visualize_visited_reg:      true
+  visualize_frontiers:        true
+  visualize_wall_leaves:      true
+   
 
   
 
@@ -236,7 +260,7 @@ Local3DPlannerROS:
 
 # Goal Tolerance Parameters
   yaw_goal_tolerance:         0.15 #0.1
-  xyz_goal_tolerance:         0.17 #0.13
+  xyz_goal_tolerance:         0.25 #0.13
   wp_tolerance:               0.3
   
 # Forward Simulation Parameters
@@ -263,11 +287,11 @@ Local3DPlannerROS:
 local_features_3d:
 
   pointcloud_topic:           pcl_filters_node_3/local_control_pointcloud #pcl_filters_node_2/features_pointcloud  #pcl_filters_node_3/local_control_pointcloud  
-  robot_circuns_radius:       0.42
+  robot_circuns_radius:       0.40
   max_pitch_inclination:      1.57  #0.85   #0.79 rad = 45º   0.87 = 50ª
   max_roll_inclination:       1.57  #0.85     
   max_roughness:              5.0  #0.15 #0.8
-  min_points_allowed:         20   #20
+  min_points_allowed:         15   #20
 
   robot_base_frame:           indires_rover/base_link
   robot_odom_frame:           indires_rover/odom
