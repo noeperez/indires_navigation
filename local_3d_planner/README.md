@@ -29,6 +29,14 @@ The controller follows the structure of the standard base local planner of ROS. 
 
 * **Collision detection Parameters**
 	- features_name. String that would be used as a prefix to look for the parameters required by the navigation_features_3d in the parameter server since it is used here for traversability analysis. See parameters of the navigation_features_3d package.
+	- odometry_topic. name of the topic that is publishing the odometry of the vehicle.
+	- base_frame. name of the base TF frame of the vehicle. Default: base_link.
+	- global_frame. TF frame in which the local planner works. Default: odom.
+
+## Topics published
+
+* **global_plan**. Path for visualization in RViz. ROS Message type: nav_msgs/Path
+* **local_plan**. Path for visualization in RViz. ROS Message type: nav_msgs/Path
 
 
 ## Dependences
