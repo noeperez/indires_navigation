@@ -31,6 +31,11 @@ This is a modified version of the original move_base package of ROS. This modifi
 The regular costmap_2d package of ROS has a dependency on PCL. Therefore, as we are using here the version 1.9.1 of the PCL library, we need to include this package with the aim of keeping everything working properly. Only the CMakeLists.txt has been modified to take the PCL version 1.9.1 in comparison with the original ROS package (Kinetic distro). 
 
 
+The following image shows an example of the ros node graph of a complete simulation of the system also using Gazebo as robot and environment simulator.
+
+![alt text](https://github.com/noeperez/indires_navigation/blob/master/indires_navigation/images/rrt_rosgraph.png)
+
+
 
 The package is a **work in progress** used in research prototyping. Pull requests and/or issues are highly encouraged.
 
