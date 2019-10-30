@@ -1,5 +1,5 @@
 # indires_navigation
-ROS metapackage for ground robot navigation and exploration developed for the European Project INDIRES (http://indires.eu/)
+ROS metapackage for ground robot 3D navigation and exploration developed for the European Project INDIRES (http://indires.eu/)
 
 ![alt text](https://github.com/noeperez/indires_navigation/blob/master/indires_navigation/images/rrt_planning.png)
 
