@@ -272,6 +272,16 @@ void nav3d::Features3D::setParams(std::string name)
 	variable_size_enabled_=true;
 	n.getParam("variable_size_enabled", variable_size_enabled_);
 	printf("%s. variable_size_enabled: %i\n", name_.c_str(), variable_size_enabled_);
+	
+	
+	
+	visualize_visited_reg_ = true;
+	n.getParam("visualize_visited_reg", visualize_visited_reg_);
+	visualize_frontiers_ = true;
+	n.getParam("visualize_frontiers", visualize_frontiers_);
+	visualize_wall_leaves_ = true;
+	n.getParam("visualize_wall_leaves", visualize_wall_leaves_);
+	
 
 
 	kdtree_ = new pcl::KdTreeFLANN<pcl::PointXYZ>();
@@ -312,6 +322,8 @@ void nav3d::Features3D::setParams(std::string name)
 	wall_pub_ = nh_.advertise<visualization_msgs::Marker>("wall_points", 2);
 	
 	frontier_pub_ = nh_.advertise<visualization_msgs::Marker>("frontiers_points", 2);
+	
+	visited_pub_ = nh_.advertise<visualization_msgs::Marker>("visited_regions", 2);
 	
 	pc_wall_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("wall_pointcloud", 1); 
 	
@@ -805,42 +817,36 @@ int nav3d::Features3D::evaluate_leaves(std::vector<geometry_msgs::Point>* points
 	}
 	
 	
-	visualization_msgs::Marker marker;
-	marker.header.frame_id = robot_odom_frame_; 
-	marker.header.stamp = ros::Time();
-	marker.ns = "wall_points";
-	marker.id = 3000; //key;
-	marker.type = visualization_msgs::Marker::POINTS;
-	marker.action = visualization_msgs::Marker::ADD;
-	marker.scale.x = 0.1;
-	marker.scale.y = 0.1; 
-	marker.scale.z = 0.1; 
-	marker.color.a = 1.0;
-	marker.color.r = 1.0;
-	marker.color.g = 0.0;
-	marker.color.b = 0.0;
-	
-	
-		
-	/*wall_cloud_.width = wall_cloud_.width + wall_points_.size();
-	for(unsigned int i=0; i<wall_points_.size(); i++)
+	if(visualize_wall_leaves_)
 	{
-		pcl::PointXYZ p(wall_points_[i].x, wall_points_[i].y, wall_points_[i].z);
-		wall_cloud_.points.push_back(p);
-	}*/
+		visualization_msgs::Marker marker;
+		marker.header.frame_id = robot_odom_frame_; 
+		marker.header.stamp = ros::Time();
+		marker.ns = "wall_points";
+		marker.id = 3000; //key;
+		marker.type = visualization_msgs::Marker::POINTS;
+		marker.action = visualization_msgs::Marker::ADD;
+		marker.scale.x = 0.1;
+		marker.scale.y = 0.1; 
+		marker.scale.z = 0.1; 
+		marker.color.a = 1.0;
+		marker.color.r = 1.0;
+		marker.color.g = 0.0;
+		marker.color.b = 0.0;
 
-		
-	for(unsigned int i=0; i<wall_points_.size(); i++)
-	{
-		geometry_msgs::Point p;
-		p.x = wall_points_[i].x;
-		p.y = wall_points_[i].y;
-		p.z = wall_points_[i].z;
+			
+		for(unsigned int i=0; i<wall_points_.size(); i++)
+		{
+			geometry_msgs::Point p;
+			p.x = wall_points_[i].x;
+			p.y = wall_points_[i].y;
+			p.z = wall_points_[i].z;
 
-		marker.points.push_back(p);
+			marker.points.push_back(p);
+		}
+			
+		wall_pub_.publish(marker);
 	}
-		
-	wall_pub_.publish(marker);
 	wall_points_.clear();
 		
 	//sensor_msgs::PointCloud2 msg;
@@ -848,29 +854,31 @@ int nav3d::Features3D::evaluate_leaves(std::vector<geometry_msgs::Point>* points
 	//pc_wall_pub_.publish(msg);
 	
 	
-	
-	visualization_msgs::Marker marker2;
-	marker2.header.frame_id = robot_odom_frame_; 
-	marker2.header.stamp = ros::Time();
-	marker2.ns = "frontier_points";
-	marker2.id = 4000; //key;
-	marker2.type = visualization_msgs::Marker::POINTS;
-	marker2.action = visualization_msgs::Marker::ADD;
-	marker2.scale.x = 0.15;
-	marker2.scale.y = 0.15; 
-	marker2.scale.z = 0.15; 
-	marker2.color.a = 1.0;
-	marker2.color.r = 1.0;
-	marker2.color.g = 1.0;
-	marker2.color.b = 0.0;
-	//marker.lifetime = ros::Duration(2.0);
-	for(unsigned int i=0; i<frontier_points_.size(); i++)
+	if(visualize_frontiers_)
 	{
-		frontier_points_[i].z = frontier_points_[i].z+0.02;
-		marker2.points.push_back(frontier_points_[i]);
+		visualization_msgs::Marker marker2;
+		marker2.header.frame_id = robot_odom_frame_; 
+		marker2.header.stamp = ros::Time();
+		marker2.ns = "frontier_points";
+		marker2.id = 4000; //key;
+		marker2.type = visualization_msgs::Marker::POINTS;
+		marker2.action = visualization_msgs::Marker::ADD;
+		marker2.scale.x = 0.15;
+		marker2.scale.y = 0.15; 
+		marker2.scale.z = 0.15; 
+		marker2.color.a = 1.0;
+		marker2.color.r = 1.0;
+		marker2.color.g = 1.0;
+		marker2.color.b = 0.0;
+		//marker.lifetime = ros::Duration(2.0);
+		for(unsigned int i=0; i<frontier_points_.size(); i++)
+		{
+			frontier_points_[i].z = frontier_points_[i].z+0.02;
+			marker2.points.push_back(frontier_points_[i]);
+		}
+			
+		frontier_pub_.publish(marker2);
 	}
-		
-	frontier_pub_.publish(marker2);
 	frontier_points_.clear();
 	
 								
@@ -895,19 +903,41 @@ int nav3d::Features3D::evaluate_leaves(std::vector<geometry_msgs::Point>* points
 	//-----------------------------------------------------------------------------
 	if(visited_region_enabled_)
 	{
+		visualization_msgs::Marker marker3;
+		marker3.header.frame_id = robot_odom_frame_; 
+		marker3.header.stamp = ros::Time();
+		marker3.ns = "frontier_points";
+		marker3.id = 5000; //key;
+		marker3.type = visualization_msgs::Marker::SPHERE_LIST;
+		marker3.action = visualization_msgs::Marker::ADD;
+		marker3.scale.x = exp_min_dist_goals_;
+		marker3.scale.y = exp_min_dist_goals_; 
+		marker3.scale.z = exp_min_dist_goals_; 
+		marker3.color.a = 0.6;
+		marker3.color.r = 0.72;
+		marker3.color.g = 0.2;
+		marker3.color.b = 1.0;
 		//printf("Evaluating point x:%.1f, y:%.1f, z:%.1f with goals:\n", p.x, p.y, p.z);
 		for(unsigned int i=0; i<exp_regions_.size(); i++)
 		{
 			geometry_msgs::Point t = exp_regions_[i].p;
+			
+			if(exp_regions_[i].visits >= 2 && visualize_visited_reg_){
+					marker3.points.push_back(t);
+			}
+			
 			float r = (p.x-t.x)*(p.x-t.x)+(p.y-t.y)*(p.y-t.y)+(p.z-t.z)*(p.z-t.z);
 			float d = sqrt(r);
 			//printf("Goal %u: x:%.1f, y:%.1f, z:%.1f, d: %.2f, visits:%i\n", i, t.x,t.y,t.z, d, exp_regions_[i].visits);
 			if(d <= exp_min_dist_goals_)
 			{
-				printf("Evaluate_leaves. Region previously visited. Adding the visit!\n\n");
+				//printf("Evaluate_leaves. Region previously visited. Adding the visit!\n\n");
 				exp_regions_[i].visits = exp_regions_[i].visits+1;
+					
 			} 
+			
 		}
+		if(visualize_visited_reg_) visited_pub_.publish(marker3);
 	}
 	
 	

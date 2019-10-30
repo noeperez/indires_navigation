@@ -226,6 +226,7 @@ namespace nav3d {
 			ros::Publisher 						wall_pub_;
 			std::vector<geometry_msgs::Point>	frontier_points_;
 			ros::Publisher 						frontier_pub_;
+			ros::Publisher 						visited_pub_;
 			sensor_msgs::PointCloud2 			cloud_;
 			pcl::PointCloud<pcl::PointXYZ>		pcl_cloud_;
 			pcl::PointCloud<pcl::PointXYZ>		wall_cloud_;
@@ -316,6 +317,10 @@ namespace nav3d {
 			bool 								visited_region_enabled_;
 			bool 								remove_wall_frontier_enabled_;
 			bool  								variable_size_enabled_;
+			
+			bool								visualize_visited_reg_;
+			bool 								visualize_frontiers_;
+			bool 								visualize_wall_leaves_;
 
 			
 			
