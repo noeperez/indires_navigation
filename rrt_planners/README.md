@@ -97,11 +97,10 @@ Using a point cloud as sample space instead of uniform sampling of the space:
 * **rrt_goal_marker**. Marker for visualization of the goal given to the RRT planner in RViz (messsage type: visualization_msgs/Marker).
 
 
+The package is a **work in progress** used in research prototyping. Pull requests and/or issues are highly encouraged.
+
 
 The upo_rrt_planners library uses nearest neighbor data structures through the FLANN library. See: M. Muja and D.G. Lowe, "Fast Approximate Nearest Neighbors with Automatic Algorithm Configuration", in International Conference on Computer Vision Theory and Applications (VISAPP'09), 2009. http://people.cs.ubc.ca/~mariusm/index.php/FLANN/FLANN
 
-
-
-The package is a **work in progress** used in research prototyping. Pull requests and/or issues are highly encouraged.
 
 [1] B. Yamauchi. A Frontier-Based Approach for Autonomous Exploration. in In Proceedings of the IEEE International Symposium on Computational Intelligence, Robotics and Automation, 1997, pp. 146–151.

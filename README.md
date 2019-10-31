@@ -31,7 +31,7 @@ This is a modified version of the original move_base package of ROS. This modifi
 The regular costmap_2d package of ROS has a dependency on PCL. Therefore, as we are using here the version 1.9.1 of the PCL library, we need to include this package with the aim of keeping everything working properly. Only the CMakeLists.txt has been modified to take the PCL version 1.9.1 in comparison with the original ROS package (Kinetic distro). 
 
 
-The following image shows an example of the ros node graph of a complete simulation of the system also using Gazebo as robot and environment simulator.
+The following image shows an example of the ros node graph of a complete simulation of the exploration and navigation system also using Gazebo as robot and environment simulator, and ethzasl_icp_mapper as SLAM algorithm [4] .
 
 ![alt text](https://github.com/noeperez/indires_navigation/blob/master/indires_navigation/images/rosgraph.png)
 
@@ -44,3 +44,7 @@ The package is a **work in progress** used in research prototyping. Pull request
 [2] Lavalle, S. M. (1998). Rapidly-Exploring Random Trees: A New Tool for Path Planning. In (Vol. 129). https://doi.org/10.1.1.35.1853
 
 [3] In-Bae Jeong, Seung-Jae Lee, Jong-Hwan Kim (2019)- Quick-RRT*: Triangular inequality-based implementation of RRT* with improved initial solution and convergence rate, Expert Systems with Applications, Volume 123, 2019, Pages 82-90, ISSN 0957-4174, https://doi.org/10.1016/j.eswa.2019.01.032.
+
+[4] F. Pomerleau F., Colas F., Siegwart R, and Magnenat S. (2013) Comparing ICP variants on real-world data sets. Autonomous Robots, 34(3), pages 133-148.
+
+
