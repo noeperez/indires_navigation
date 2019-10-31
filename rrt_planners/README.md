@@ -82,11 +82,20 @@ Visualization options:
 
 Using a point cloud as sample space instead of uniform sampling of the space:
 * **use_external_pc_as_samples**. If it is enabled, the 3D points of a point cloud would be used as sampling space for the planner.
-* **pc_topic**. ROS topic where the point cloud is being published (the type must be sensor_msgs/PointCloud2).
+* **pc_topic**. If 'use_external_pc_as_samples' is true, name of the ROS topic where the point cloud is being published (the type must be sensor_msgs/PointCloud2).
 * **robot_base_frame**. TF frame of the robot base. Usually "base_link".
 * **robot_odom_frame**. TF frame of the robot odometry. Usually "odom".
 * **robot_pc_sensor_frame**. TF frame of the sensor that is publishing the point cloud.
 * **features_name**. String that would be used as a prefix to look for the parameters required by the navigation_features_3d in the parameter server since it is used here for traversability analysis.    
+
+
+## Topics published
+
+* **rrt_tree**. Marker for visualization of the RRT tree in RViz (messsage type: visualization_msgs/Marker).
+* **rrt_leaves**. Marker for visualization of the RRT leaves in RViz (messsage type: visualization_msgs/Marker).
+* **rrt_goal**. Position of the goal given to the RRT planner (messsage type: geometry_msgs/PoseStamped). 
+* **rrt_goal_marker**. Marker for visualization of the goal given to the RRT planner in RViz (messsage type: visualization_msgs/Marker).
+
 
 
 The upo_rrt_planners library uses nearest neighbor data structures through the FLANN library. See: M. Muja and D.G. Lowe, "Fast Approximate Nearest Neighbors with Automatic Algorithm Configuration", in International Conference on Computer Vision Theory and Applications (VISAPP'09), 2009. http://people.cs.ubc.ca/~mariusm/index.php/FLANN/FLANN
