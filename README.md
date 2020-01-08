@@ -1,5 +1,7 @@
 # indires_navigation
-ROS metapackage for ground robot 3D navigation and exploration developed for the European Project INDIRES (http://indires.eu/)
+ROS metapackage for ground robot 3D navigation and exploration developed for the European Project INDIRES (http://indires.eu/).
+Further details can be found in:
+N. Pérez-Higueras, A. Jardón, A.J. Rodríguez, C. Balaguer. 3D Exploration and Navigation with Optimal-RRT Planners for Ground Robots in Indoor Incidents. Sensors 2020, 20(1), 220; https://doi.org/10.3390/s20010220 
 
 ![alt text](https://github.com/noeperez/indires_navigation/blob/master/indires_navigation/images/rrt_planning.png)
 
