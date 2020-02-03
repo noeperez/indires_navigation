@@ -8,7 +8,7 @@ The programmed state machine is shown in the next Figure:
 
 ## Functioning
 
-* Besides your proper robot simulation, the adapted_move_base node (see [adapted_move_base.launch](https://github.com/noeperez/indires_navigation/blob/master/adapted_move_base/launch/adapted_move_base.launch)), and the indires_macro_actions node (see [indires_macro_actions.launch](https://github.com/noeperez/indires_navigation/blob/master/indires_macro_actions/launch/indires_macro_actions.launch)).
+* Besides your proper robot simulation, the adapted_move_base node (see [adapted_move_base.launch](https://github.com/noeperez/indires_navigation/blob/master/adapted_move_base/launch/adapted_move_base.launch)), and the indires_macro_actions node (see [indires_macro_actions.launch](https://github.com/noeperez/indires_navigation/blob/master/indires_macro_actions/launch/indires_macro_actions.launch)) must be runnning.
 
 * Then, run the nodes event_mananger.py and nav_behavior_fsm.py (see the launch file control_tester.launch). To test the system, an event simulator through the command line is also provided. It shows a menu to chose the macro-action to perform or the event to be triggered. The tester (control_tester.py) is also launched in the previous launch file. 
 
