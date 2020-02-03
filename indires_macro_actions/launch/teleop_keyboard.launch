@@ -1,0 +1,9 @@
+<!-- -->
+<launch>
+  <node pkg="teleop_twist_keyboard" name="teleop_twist_keyboard" type="teleop_twist_keyboard.py" output="screen">
+    <remap from="/cmd_vel" to="indires_rover/cmd_vel" />
+  </node>
+
+  <node name="relay_vel" pkg="topic_tools" type="relay" output="screen" args="/indires_rover/cmd_vel /manual_cmd_vel" /> 
+
+</launch>

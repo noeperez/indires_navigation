@@ -1,0 +1,10 @@
+# Goal
+geometry_msgs/PoseStamped home_pose
+---
+# Result
+string result
+uint32 value
+---
+# Feedback. Current robot position
+geometry_msgs/PoseStamped base_position
+string text

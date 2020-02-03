@@ -1,7 +1,8 @@
 # indires_navigation
 ROS metapackage for ground robot 3D navigation and exploration developed for the European Project INDIRES (http://indires.eu/).
 Further details can be found in:
-N. Pérez-Higueras, A. Jardón, A.J. Rodríguez, C. Balaguer. 3D Exploration and Navigation with Optimal-RRT Planners for Ground Robots in Indoor Incidents. Sensors 2020, 20(1), 220; https://doi.org/10.3390/s20010220 
+
+* N. Pérez-Higueras, A. Jardón, A.J. Rodríguez, C. Balaguer. 3D Exploration and Navigation with Optimal-RRT Planners for Ground Robots in Indoor Incidents. Sensors 2020, 20(1), 220. https://doi.org/10.3390/s20010220 
 
 ![alt text](https://github.com/noeperez/indires_navigation/blob/master/indires_navigation/images/rrt_planning.png)
 
@@ -32,8 +33,14 @@ This is a modified version of the original move_base package of ROS. This modifi
 * *costmap_2d*:   
 The regular costmap_2d package of ROS has a dependency on PCL. Therefore, as we are using here the version 1.9.1 of the PCL library, we need to include this package with the aim of keeping everything working properly. Only the CMakeLists.txt has been modified to take the PCL version 1.9.1 in comparison with the original ROS package (Kinetic distro). 
 
+* *indires_macro_actions*:
+A set of navigation macro-actions have been implemented by using the *actionlib* library of ROS. This way, the navigation system is employed to perform different actions as reaching an indicated goal, perform an autonomous exploration, or teleoperate the robot.
 
-The following image shows an example of the ros node graph of a complete simulation of the exploration and navigation system also using Gazebo as robot and environment simulator, and ethzasl_icp_mapper as SLAM algorithm [4] .
+* *control_state_machine*:
+Python scripts that contains the finite state machine for the interaction between the actionlib macro-actions defined in indires_macro_actions. 
+
+
+The following image shows an example of the ros node graph of a simulation of the exploration and navigation system also using Gazebo as robot and environment simulator (nodes from indires_macro_actions and control_state_machine are not shown), and ethzasl_icp_mapper as SLAM algorithm [4] .
 
 ![alt text](https://github.com/noeperez/indires_navigation/blob/master/indires_navigation/images/rosgraph.png)
 

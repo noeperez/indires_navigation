@@ -1,0 +1,10 @@
+<!-- -*- mode: XML -*- -->
+
+<launch>
+
+	<node pkg="control_state_machine" name="event_manager" type="event_manager.py" output="screen"/>
+	<!--node pkg="control_state_machine" name="upo_pilot_interface_bridge" type="pilot_interface_bridge.py" output="screen"/-->
+	<node pkg="control_state_machine" name="nav_behavior_fsm" type="nav_behavior_fsm.py" output="screen" />
+	<node pkg="control_state_machine" name="control_tester" type="control_tester.py" output="screen" />
+
+</launch>

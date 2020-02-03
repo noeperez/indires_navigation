@@ -1,0 +1,32 @@
+<!-- -*- mode: XML -*- -->
+
+<launch>
+	<master auto="start"/>
+
+  <param name="/use_sim_time" value="true"/>
+
+
+     <!-- launch-prefix="xterm -e gdb (doble hyphen)args"-->
+	 <node pkg="indires_macro_actions" type="indires_macro_actions" name="indires_macro_actions" output="screen"  >
+
+		<!-- frecuency of checking the block situation (seconds)-->
+		<param name="secs_to_check_block" type="double" value="20.0" /> 
+		<!-- minimum distance that the robot should have moved in "secs_to_check_block" time from 
+		its position to determine a blocked situation -->
+		<param name="block_dist" type="double" value="0.4" /> 
+		
+		<!-- frequency of the macro actions -->
+		<param name="control_frequency" value="15.0" />
+
+		<param name="odom_topic" value="indires_rover/odom" />
+
+	</node>
+
+	<!--control state machine nodes -->
+	<!--node pkg="control_state_machine" name="event_manager" type="event_manager.py" output="screen"/-->
+	<!--node pkg="control_state_machine" name="nav_behavior_fsm" type="nav_behavior_fsm.py" output="screen" /-->
+	<!--node pkg="control_state_machine" name="control_tester" type="control_tester.py" output="screen" /-->
+
+	
+
+</launch>
