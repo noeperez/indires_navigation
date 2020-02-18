@@ -70,7 +70,7 @@ add_service_files(
 #   PointCosts.srv
 	MakePlan.srv
 #	MakePlanCostmap.srv
-#	ChangeSolveTime.srv
+	ChangeSolveTime.srv
 )
 
 generate_messages(
