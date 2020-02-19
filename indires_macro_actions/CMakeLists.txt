@@ -124,7 +124,7 @@ generate_messages(
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES indires_macro_actions
-  CATKIN_DEPENDS actionlib actionlib_msgs cmake_modules geometry_msgs move_base_msgs rosconsole roscpp std_msgs angles tf adapted_move_base yaml-cpp 
+  CATKIN_DEPENDS actionlib actionlib_msgs cmake_modules geometry_msgs move_base_msgs rosconsole roscpp std_msgs angles tf adapted_move_base
   DEPENDS system_lib
 )
 
@@ -170,7 +170,6 @@ add_dependencies(indires_macro_actions ${${PROJECT_NAME}_EXPORTED_TARGETS} ${cat
 target_link_libraries(indires_macro_actions
    ${catkin_LIBRARIES}
    ${OpenCV_LIBRARIES}
-   yaml-cpp
 )
 
 #############
