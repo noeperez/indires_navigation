@@ -20,7 +20,7 @@ find_package(catkin REQUIRED COMPONENTS
   angles
   tf
   adapted_move_base
-  dynamic_reconfigure
+  #dynamic_reconfigure
 )
 
 ## System dependencies are found with CMake's conventions
