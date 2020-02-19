@@ -158,7 +158,7 @@ add_executable(indires_macro_actions
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
-add_dependencies(indires_macro_actions indires_macro_actions_gencfg)
+#add_dependencies(indires_macro_actions indires_macro_actions_gencfg)
 add_dependencies(indires_macro_actions indires_macro_actions_gencpp)
 add_dependencies(indires_macro_actions geometry_msgs_gencpp)
 add_dependencies(indires_macro_actions nav_msgs_gencpp)
