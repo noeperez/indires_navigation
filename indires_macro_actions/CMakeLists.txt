@@ -124,7 +124,7 @@ generate_messages(
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES indires_macro_actions
-  CATKIN_DEPENDS actionlib actionlib_msgs cmake_modules geometry_msgs move_base_msgs rosconsole roscpp std_msgs angles tf adapted_move_base yaml-cpp dynamic_reconfigure
+  CATKIN_DEPENDS actionlib actionlib_msgs cmake_modules geometry_msgs move_base_msgs rosconsole roscpp std_msgs angles tf adapted_move_base yaml-cpp 
   DEPENDS system_lib
 )
 
