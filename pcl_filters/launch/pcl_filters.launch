@@ -72,7 +72,7 @@
 		<param name="use_service" value="true" />
 		<param name="publish_topic" value="false" />
 		<param name="use_robot_pose" value="true" />
-		<param name="robot_pose_topic" value="/indires_rover/odom_filtered" />
+		<param name="robot_pose_topic" value="$(arg robot_topic)" />
 		<param name="odom_frame" value="$(arg prefix)/odom" /> <!--"indires_rover/odom"-->
 		<param name="local_grid_radius" value="7.0" /> <!--7.0  for nfe,bfe: 14.0-->
 
