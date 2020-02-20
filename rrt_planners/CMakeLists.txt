@@ -3,7 +3,7 @@ project(rrt_planners)
 
 ## Add support for C++11, supported in ROS Kinetic and newer
 add_definitions(-std=c++11)
-add_compile_options(-std=c++11)
+add_compile_options(-std=c++11 -fext-numeric-literals)
 
 set (CMAKE_BUILD_TYPE Debug)
 find_package(catkin REQUIRED
