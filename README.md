@@ -70,9 +70,12 @@ The files for simulation in Gazebo of the robot and the environments are not inc
 
 After configuring your system, your simulation (or real robot) with the mapping algorithm must be launched. Then, you can try the navigation and exploration system by launching three launch files:
 
-* Navigation and exploration system: roslaunch adapted_move_base adapted_move_base.launch
-* Navigation macro-actions: roslaunch indires_macro_actions indires_macro_actions.launch
-* Finite State Machine that controls the macro-actions and a simple command-line program for testing: roslaunch control_state_machine control_tester.launch 
+* Navigation and exploration system:
+> roslaunch adapted_move_base adapted_move_base.launch
+* Navigation macro-actions: 
+> roslaunch indires_macro_actions indires_macro_actions.launch
+* Finite State Machine that controls the macro-actions and a simple command-line program for testing:
+> roslaunch control_state_machine control_tester.launch 
 
 
 
