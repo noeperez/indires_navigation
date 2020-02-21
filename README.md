@@ -46,6 +46,36 @@ The following image shows an example of the ros node graph of a simulation of th
 
 
 
+## Configuration
+
+The system does not include any SLAM or mapping algorithm. It relies on any external mapping algorithm which must be publishing an online map in the form of point cloud. 
+
+
+The files for simulation in Gazebo of the robot and the environments are not included. 
+
+
+* *What you need to configure*:
+
+	- Chose a SLAM or mapping algorithm that provides an online map in the form of pointcloud. The system listens to it in the topic /point_map [sensor_msgs/PointCloud2]. This can be changed through the parameter "pointcloud" indicated in the launch file adapted_move_base.launch. 
+	- Your robot (real or simulated) must be publishing a "reliable" odometry topic. The name of the odometry topic need to be indicated in different places:
+		- Parameters "robot_odom_topic" and "odometry_topic" of the configuration file navigation_params.yaml of the package adapted_move_base.
+		- Parameter "robot_topic" in the launch file pcl_filters.launch.
+		- Parameter "odom_topic" in the launch file indires_macro_actions.launch.
+	- You need a proper TF tree of your system. The robot frame (usually /base_link) and the frame of the sensor that is publishing the pointcloud (a rgb-d camera for instance) must be indicated in the files navigation_params.yaml and pcl_filters.launch. 
+	- The name of your topic for robot control commands [geometry_msgs/Twist] must be indicated in adapted_move_base.launch.
+
+
+
+## Functioning
+
+After configuring your system, your simulation (or real robot) with the mapping algorithm must be launched. Then, you can try the navigation and exploration system by launching three launch files:
+
+* Navigation and exploration system: roslaunch adapted_move_base adapted_move_base.launch
+* Navigation macro-actions: roslaunch indires_macro_actions indires_macro_actions.launch
+* Finite State Machine that controls the macro-actions and a simple command-line program for testing: roslaunch control_state_machine control_tester.launch 
+
+
+
 The package is a **work in progress** used in research prototyping. Pull requests and/or issues are highly encouraged.
 
 [1] Karaman, S., & Frazzoli, E. (2011). Sampling-based algorithms for optimal motion planning. The International Journal of Robotics Research, 30(7), 846–894. https://doi.org/10.1177/0278364911406761
