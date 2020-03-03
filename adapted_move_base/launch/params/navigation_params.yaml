@@ -279,6 +279,26 @@ Local3DPlannerROS:
   base_frame:                 indires_rover/base_link
   global_frame:               indires_rover/odom
 
+
+  # if a laser range finder is employed
+  use_laser:                  false
+  laser_topic:                scan
+
+  sensor_uncertainty:         0.05
+
+# if range sonars are employed, indicate the topic names.
+# The frame for each sonar must be properly integrated in the TF tree 
+  use_range:                  false
+  range_topic_0:              range_1  #range_0              
+  range_topic_1:              range_2  #range_1
+  range_topic_2:              range_3  #range_2
+  range_topic_3:              range_4  #range_3
+  range_topic_4:              range_5  #range_4
+  range_topic_5:              range_6  #range_5
+  range_topic_6:              range_7  #range_6
+#  range_topic_7:              range_7
+
+
   #The local3DPlanner uses its own navigation_features_3d
   features_name:              local_features_3d
 

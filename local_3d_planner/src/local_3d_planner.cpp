@@ -391,7 +391,7 @@ namespace local_3d_planner{
 		//ros::WallTime t2 = ros::WallTime::now();
 		//double secs = (t2-t1).toSec();
 		//printf("\n\nFindBestPathTime: %f seconds\n\n", secs);
-		printf("FindBestAction. validTraj found, vx:%.2f, vy:%.2f, vth:%.2f\n", vx, vy, vt);
+		//printf("FindBestAction. validTraj found, vx:%.2f, vy:%.2f, vth:%.2f\n", vx, vy, vt);
 		return true;
 	}
 
@@ -465,7 +465,7 @@ namespace local_3d_planner{
 					//ros::WallTime t2 = ros::WallTime::now();
 					//double secs = (t2-t1).toSec();
 					//printf("\n\nFindBestPathTime: %f seconds\n\n", secs);
-					printf("FindBestAction. Valid Traj found with DWA. vx:%.2f, vy:%.2f, vth:%.2f\n", cmd_vel.linear.x, cmd_vel.linear.y, cmd_vel.angular.z);
+					//printf("FindBestAction. Valid Traj found with DWA. vx:%.2f, vy:%.2f, vth:%.2f\n", cmd_vel.linear.x, cmd_vel.linear.y, cmd_vel.angular.z);
 					return true;
 				}
 

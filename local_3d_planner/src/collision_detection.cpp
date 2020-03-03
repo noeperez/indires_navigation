@@ -19,8 +19,13 @@ CollisionDetection::CollisionDetection(std::string name, tf::TransformListener* 
 	max_ang_acc_ = ang_acc;
 	sim_time_ = sim_t;
 	robot_radius_ = r_radius;
+	robot_radius_aug_ = robot_radius_;
 	local_radius_ = local_radius;
 	granularity_ = granularity;
+	use_laser_ = false;
+	use_range_ = false;
+    num_ranges_ = 0;
+    ranges_ready_ = false;
 		
 	setup(name);
 }
@@ -39,9 +44,54 @@ void CollisionDetection::setup(std::string name) {
 	n.param<std::string>("odometry_topic", odom_topic_, std::string("odom"));
 	n.param<std::string>("base_frame", base_frame_, std::string("base_link"));
 
+
 	std::string features_name;
 	n.param<std::string>("features_name", features_name, std::string("nav_features_3d"));
 	//printf("CollisionDetection. Features_name: %s\n", features_name.c_str());
+
+
+	double uncertainty = 0.0;
+	n.getParam("sensor_uncertainty", uncertainty);
+	robot_radius_aug_ = robot_radius_ + uncertainty;
+	
+	n.getParam("use_laser", use_laser_);
+	std::string laser_topic;
+	ros::NodeHandle nh;
+	if(use_laser_) {
+		n.param<std::string>("laser_topic", laser_topic, std::string("scan"));
+		laser_sub_ = nh.subscribe<sensor_msgs::LaserScan>(laser_topic.c_str(), 1, &CollisionDetection::laserCallback, this); 
+	}
+
+	unsigned int i = 0;
+	n.param<bool>("use_range", use_range_, false);
+	if(use_range_)
+	{
+		bool ok = true;
+		while(ok)
+		{
+			char buf[25];
+			sprintf(buf, "range_topic_%u", i);
+			string st = string(buf);
+			
+			if(n.hasParam(st.c_str())){
+				std::string rt;
+				n.getParam(st.c_str(), rt);
+				range_topics_.push_back(rt);
+				//ros::Subscriber sub = nh.subscribe<sensor_msgs::Range>(rt.c_str(), 10, &CollisionDetection::rangeCallback, this);
+				ros::Subscriber sub = nh.subscribe<sensor_msgs::Range>(rt.c_str(), 1, boost::bind(&CollisionDetection::rangeCallback, this, _1));
+				range_subscribers_.push_back(sub);	
+				printf("%s. subscribed to topic: %s\n", name.c_str(), rt.c_str());
+				i++;
+			} else
+				ok = false;
+		
+		}
+		num_ranges_ = (int)i;
+		ranges_initiated_.assign(num_ranges_, false);
+		//range_frames_.assign(num_ranges_, "");
+	}
+
+
 	
 	max_lv_var_ = max_lin_acc_ * sim_time_;
 	max_av_var_ = max_ang_acc_ * sim_time_;
@@ -84,6 +134,92 @@ void CollisionDetection::setup(std::string name) {
 
 
 
+void CollisionDetection::laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg) 
+{
+	ROS_INFO_ONCE("Collision detector: Laser received!");
+	//IMPORTANT: the frame of the laser should be the center of the robot (base_link)
+	//Otherwise we should include a shift to the center in the calculations.
+	laser_mutex_.lock();
+	laser_scan_ = *msg;
+	//scan1_time_ = ros::Time::now();
+	laser_mutex_.unlock();
+}
+
+
+void CollisionDetection::rangeCallback(const sensor_msgs::Range::ConstPtr& msg) 
+{
+	ROS_INFO_ONCE("Collision detector: range received! Detecting configuration...");
+	if(!ranges_ready_)
+	{
+
+		if(range_frames_.size() != num_ranges_) 
+		{
+			bool found = false;
+			for(unsigned int i=0; i<range_frames_.size(); i++)
+			{
+				if(range_frames_[i].compare(msg->header.frame_id) == 0) {
+					found = true;
+					break;
+				}
+			}
+			if(!found)
+			{
+				range_frames_.push_back(msg->header.frame_id);
+
+				range r;
+				r.range = msg->range;
+				r.id = msg->header.frame_id;
+				r.min_dist = msg->min_range;
+				r.max_dist = msg->max_range;
+				r.fov = msg->field_of_view;
+				//listen to the TF to know the position of the sonar range
+				tf::StampedTransform transform;
+				try{
+					tf_->waitForTransform(base_frame_.c_str(), r.id.c_str(),
+						                  ros::Time(0), ros::Duration(3.0));
+					tf_->lookupTransform(base_frame_.c_str(), r.id.c_str(),
+						                 ros::Time(0), transform);
+				} catch(tf::TransformException ex){
+							ROS_ERROR("%s",ex.what());
+				}
+				float x = transform.getOrigin().x();
+				float y = transform.getOrigin().y();
+				r.polar_dist = sqrt(x*x + y*y);
+				//r.polar_angle = transform.getRotation().getYaw();
+				tf::Matrix3x3 m(transform.getRotation());
+				double roll, pitch, yaw;
+				m.getRPY(roll, pitch, yaw);
+				r.polar_angle = yaw;
+
+				range_mutex_.lock();
+				ranges_.push_back(r);
+				range_mutex_.unlock();
+				printf("Collision detector: Range %s configured.\n", msg->header.frame_id.c_str()); 
+			}
+
+			
+		} else {
+			ranges_ready_ = true;
+			printf("Collision detector: all the range sensors configured!!!\n\n");
+		}
+
+	} else {
+
+		range_mutex_.lock();
+		for(int i=0; i<(int)ranges_.size(); i++)
+		{			
+			if(ranges_[i].id.compare(msg->header.frame_id) == 0)
+			{
+				ranges_[i].range = msg->range;
+				break;
+			}
+		}	
+		range_mutex_.unlock();	
+	}	
+}
+
+
+
 void CollisionDetection::saturateVelocities(geometry_msgs::Twist* twist)
 {
 	float lv = twist->linear.x;
@@ -115,6 +251,118 @@ void CollisionDetection::saturateVelocities(geometry_msgs::Twist* twist)
 
 	twist->linear.x = lv;
 	twist->angular.z = av;
+
+}
+
+
+
+
+bool CollisionDetection::inCollision(float x, float y, std::vector<geometry_msgs::Point>* scanpoints)
+{
+
+	if(use_range_ && inRangeCollision(x, y))
+	{
+		printf("Possible collision detected!");
+		return true;
+	}
+	if(use_laser_ && inLaserCollision(x, y, scanpoints))
+	{
+		return true;
+	}
+	return false;
+}
+
+
+
+bool CollisionDetection::inRangeCollision(float x, float y)
+{
+
+	range_mutex_.lock();
+	for(int i=0; i<ranges_.size(); i++)
+	{
+		//Main point
+		float rx = (ranges_[i].polar_dist + ranges_[i].range)*cos(ranges_[i].polar_angle);
+		float ry = (ranges_[i].polar_dist + ranges_[i].range)*sin(ranges_[i].polar_angle);	
+		float dx = (x - rx);
+		float dy = (y - ry);
+		float dist = dx*dx + dy*dy;
+		if(dist <= (robot_radius_aug_*robot_radius_aug_)) {
+			ROS_INFO("POSSIBLE COLLISION DETECTED IN FRAME: %s", ranges_[i].id.c_str());
+			range_mutex_.unlock();
+			return true;
+		}
+
+		if(ranges_[i].fov > 0.2) 
+		{
+			//second point
+			rx = (ranges_[i].polar_dist + ranges_[i].range)*cos(ranges_[i].polar_angle + (ranges_[i].fov/2.0));
+			ry = (ranges_[i].polar_dist + ranges_[i].range)*sin(ranges_[i].polar_angle + (ranges_[i].fov/2.0));	
+			dx = (x - rx);
+			dy = (y - ry);
+			dist = dx*dx + dy*dy;
+			if(dist <= (robot_radius_aug_*robot_radius_aug_)) {
+				ROS_INFO("POSSIBLE COLLISION DETECTED (p2) IN FRAME: %s", ranges_[i].id.c_str());
+				range_mutex_.unlock();
+				return true;
+			}
+
+			//third point
+			rx = (ranges_[i].polar_dist + ranges_[i].range)*cos(ranges_[i].polar_angle - (ranges_[i].fov/2.0));
+			ry = (ranges_[i].polar_dist + ranges_[i].range)*sin(ranges_[i].polar_angle - (ranges_[i].fov/2.0));	
+			dx = (x - rx);
+			dy = (y - ry);
+			dist = dx*dx + dy*dy;
+			if(dist <= (robot_radius_aug_*robot_radius_aug_)) {
+				ROS_INFO("POSSIBLE COLLISION DETECTED (p3) IN FRAME: %s", ranges_[i].id.c_str());
+				range_mutex_.unlock();
+				return true;
+			}
+		}
+				
+	}
+	range_mutex_.unlock();
+	return false;
+}
+
+
+
+
+std::vector<geometry_msgs::Point> CollisionDetection::laser_polar2euclidean(sensor_msgs::LaserScan* scan)
+{
+	std::vector<geometry_msgs::Point> points;
+	points.reserve(scan->ranges.size());
+	geometry_msgs::Point p;
+	p.z = 0.0;
+	for(unsigned int i=0; i<scan->ranges.size(); i++)
+	{
+		//laser measure polar coordinates
+		float laser_d = scan->ranges[i];
+		float laser_th = scan->angle_min + scan->angle_increment*i;
+		//transform to x,y
+		p.x = laser_d*cos(laser_th);
+		p.y = laser_d*sin(laser_th);
+		points.push_back(p);
+	}
+	return points;
+}
+
+
+
+
+
+bool CollisionDetection::inLaserCollision(float x, float y, std::vector<geometry_msgs::Point>* scanpoints)
+{
+	for(unsigned int i=0; i<scanpoints->size(); i++)
+	{
+		float dx = (x - scanpoints->at(i).x);
+		float dy = (y - scanpoints->at(i).y);
+		//float dist = sqrt(dx*dx + dy*dy);
+		//if(dist <= robot_radius_)
+		float dist = dx*dx + dy*dy;
+		if(dist <= (robot_radius_aug_*robot_radius_aug_))
+			return true; 
+	}
+	return false;
 
 }
 
@@ -162,6 +410,16 @@ bool CollisionDetection::checkTraj(double cvx, double cvy, double cvth, double t
 	pose.header.stamp = ros::Time(); //ros::Time::now();
 	pose.header.frame_id = features_->getRobotBaseFrame(); //base_frame_;
 
+
+	std::vector<geometry_msgs::Point> laser_points;
+	if(use_laser_)
+	{
+		laser_mutex_.lock();
+		sensor_msgs::LaserScan l = laser_scan_;
+		laser_mutex_.unlock();
+		laser_points = laser_polar2euclidean(&l);
+	}
+
 	//int ini = floor(steps/2.0 + 0.5);
 	for(unsigned int i=0; i<steps; i++)
 	{
@@ -174,6 +432,9 @@ bool CollisionDetection::checkTraj(double cvx, double cvy, double cvth, double t
 		th = normalizeAngle(th, -M_PI, M_PI);
 		x = x + lin_dist*cos(th); //cos(th+av*dt/2.0)
 		y = y + lin_dist*sin(th); 
+
+		if(inCollision(x,y, &laser_points))
+			return false;
 
 		pose.pose.position.x = x;
 		pose.pose.position.y = y;

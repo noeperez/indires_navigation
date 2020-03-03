@@ -8,6 +8,7 @@
 #include <ros/ros.h>
 #include <tf/transform_listener.h>
 #include <sensor_msgs/LaserScan.h>
+#include <sensor_msgs/Range.h>
 #include <geometry_msgs/Twist.h>
 #include <geometry_msgs/Point.h>
 #include <local_3d_planner/odometry_helper_ros.h>
@@ -30,6 +31,18 @@ namespace local_3d_planner {
 	class CollisionDetection {
 
 		public:
+
+
+			struct range{
+				std::string id; 
+				float range;
+				float polar_angle;
+				float polar_dist;
+				float fov;
+				float min_dist;
+				float max_dist;
+			};
+
 
 			//CollisionDetection();
 			CollisionDetection(std::string name, tf::TransformListener* tf,
@@ -65,6 +78,16 @@ namespace local_3d_planner {
 
 			void saturateVelocities(geometry_msgs::Twist* twist);
 
+			void laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg);
+			std::vector<geometry_msgs::Point> laser_polar2euclidean(sensor_msgs::LaserScan* scan);
+
+			void rangeCallback(const sensor_msgs::Range::ConstPtr& msg);
+			void initiateRanges();
+
+
+			bool inRangeCollision(float x, float y);
+			bool inLaserCollision(float x, float y, std::vector<geometry_msgs::Point>* scanpoints);
+			bool inCollision(float x, float y, std::vector<geometry_msgs::Point>* scanpoints);
 
 
 		private:
@@ -156,6 +179,7 @@ namespace local_3d_planner {
 			double							max_ang_acc_;
 			double							sim_time_;
 			double 							robot_radius_;
+			double 							robot_radius_aug_;
 			double							local_radius_;
 			double							granularity_;
 
@@ -163,6 +187,26 @@ namespace local_3d_planner {
 			float 							max_av_var_;
 
 			tf::Stamped<tf::Pose> 			robot_vel_;
+
+
+			//in case a laser range finder is also used
+			bool 							use_laser_;
+			ros::Subscriber 				laser_sub_;
+			sensor_msgs::LaserScan			laser_scan_;
+			std::mutex						laser_mutex_;
+
+
+			//Sonar ranges employed
+			bool 							use_range_;
+			int								num_ranges_;
+			std::vector<std::string>		range_topics_;
+			std::vector<std::string>		range_frames_;
+			std::vector<ros::Subscriber>	range_subscribers_; 
+			//ros::Subscriber 				range_sub_;
+			std::vector<range>				ranges_;
+			std::mutex						range_mutex_;
+			std::vector<bool>				ranges_initiated_;
+			bool							ranges_ready_;
 
 			//Dynamic reconfigure
 			//boost::recursive_mutex 		configuration_mutex_;
