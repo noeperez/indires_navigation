@@ -41,6 +41,7 @@ An example of the parameters can be observed in the file navigation_params.yaml 
 	- laser_topic. If the parameters "use_laser" is True, the name of the topic publishing the laser scan must be indicated here.
 	- use_range. Boolean to indicate whether a set of sensors publishing sensors_msgs/Range messages are used. If true, the name of the topics where the ranges are published must be indicated through the parameters "range_topic_X", in which "X" is a positive integer value. For example, if we have two sonars publishing in the topics "sonar_range_up" and "sonar_range_down", we must indicate:
 	> range_topic_0:    sonar_range_up
+
 	> range_topic_1:    sonar_range_down
 
 
