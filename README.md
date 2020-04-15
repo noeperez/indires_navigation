@@ -79,7 +79,7 @@ After configuring your system, your simulation (or real robot) with the mapping 
 
 
 
-The package is a **work in progress** used in research prototyping. Pull requests and/or issues are highly encouraged.
+This package has been tested under ROS KINETIC distribution. Some issues in ROS MELODIC can arise. The package is a **work in progress** used in research prototyping. Pull requests and/or issues are highly encouraged.
 
 [1] Karaman, S., & Frazzoli, E. (2011). Sampling-based algorithms for optimal motion planning. The International Journal of Robotics Research, 30(7), 846–894. https://doi.org/10.1177/0278364911406761
 
