@@ -103,4 +103,4 @@ The package is a **work in progress** used in research prototyping. Pull request
 The upo_rrt_planners library uses nearest neighbor data structures through the FLANN library. See: M. Muja and D.G. Lowe, "Fast Approximate Nearest Neighbors with Automatic Algorithm Configuration", in International Conference on Computer Vision Theory and Applications (VISAPP'09), 2009. http://people.cs.ubc.ca/~mariusm/index.php/FLANN/FLANN
 
 
-[1] B. Yamauchi. A Frontier-Based Approach for Autonomous Exploration. in In Proceedings of the IEEE International Symposium on Computational Intelligence, Robotics and Automation, 1997, pp. 146–151.
+[1] In-Bae Jeong, Seung-Jae Lee, Jong-Hwan Kim (2019)- Quick-RRT*: Triangular inequality-based implementation of RRT* with improved initial solution and convergence rate, Expert Systems with Applications, Volume 123, 2019, Pages 82-90, ISSN 0957-4174, https://doi.org/10.1016/j.eswa.2019.01.032.
