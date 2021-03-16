@@ -19,6 +19,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   angles
   tf
+  tf2_ros
   adapted_move_base
   #dynamic_reconfigure
 )
@@ -124,7 +125,7 @@ generate_messages(
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES indires_macro_actions
-  CATKIN_DEPENDS actionlib actionlib_msgs cmake_modules geometry_msgs move_base_msgs rosconsole roscpp std_msgs angles tf adapted_move_base
+  CATKIN_DEPENDS actionlib actionlib_msgs cmake_modules geometry_msgs move_base_msgs rosconsole roscpp std_msgs angles tf tf2_ros adapted_move_base
   DEPENDS system_lib
 )
 

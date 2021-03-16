@@ -145,15 +145,19 @@ add_definitions(${PCL_DEFINITIONS})
 # add_executable(${PROJECT_NAME}_node src/pcl_filters_node.cpp)
 
 add_executable(pcl_filters_node src/pcl_filters.cpp )
+add_dependencies(pcl_filters_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries (pcl_filters_node ${PCL_LIBRARIES} ${catkin_LIBRARIES})
 
 add_executable(pcl_costmap_node src/pcl_costmap.cpp )
+add_dependencies(pcl_costmap_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries (pcl_costmap_node ${PCL_LIBRARIES} ${catkin_LIBRARIES})
 
 add_executable(alternate_pc_node src/alternate_pc.cpp )
+add_dependencies(alternate_pc_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries (alternate_pc_node ${PCL_LIBRARIES} ${catkin_LIBRARIES})
 
 add_executable(pc2_to_ply src/pc2_to_ply.cpp )
+add_dependencies(pc2_to_ply ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries (pc2_to_ply ${PCL_LIBRARIES} ${catkin_LIBRARIES})
 
 ## Rename C++ executable without prefix

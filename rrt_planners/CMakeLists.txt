@@ -8,40 +8,30 @@ add_compile_options(-std=c++11 -fext-numeric-literals)
 set (CMAKE_BUILD_TYPE Debug)
 find_package(catkin REQUIRED
     COMPONENTS
-		angles
+        angles
         cmake_modules
-		geometry_msgs
-  		nav_msgs
-		#pcl_conversions
-  		#pcl_ros
+        geometry_msgs
+        nav_msgs
         roscpp
-		rosconsole
+        rosconsole
         tf
-  		std_msgs
-  		visualization_msgs
-  		#upo_msgs
-		navigation_features_3d
-		#dynamic_reconfigure
-		message_generation
+        tf2_ros
+        std_msgs
+        visualization_msgs
+        navigation_features_3d
+        #dynamic_reconfigure
+        message_generation
 )
 
-## System dependencies are found with CMake's conventions
-#find_package(Boost REQUIRED
-#    COMPONENTS
-#        thread
-#)
+
 
 find_package(Boost REQUIRED)
 find_package(Eigen3 REQUIRED)
-#find_package(PCL REQUIRED)
-#find_package(OpenCV REQUIRED)
 
 include_directories(
     include
     ${catkin_INCLUDE_DIRS}
     ${EIGEN_INCLUDE_DIRS}
-	#${PCL_INCLUDE_DIRS}
-	#${OpenCV_INCLUDE_DIRS}
 )
 
 add_definitions(${EIGEN_DEFINITIONS})
@@ -68,9 +58,9 @@ add_definitions(${EIGEN_DEFINITIONS})
 add_service_files(
     FILES
 #   PointCosts.srv
-	MakePlan.srv
-#	MakePlanCostmap.srv
-	ChangeSolveTime.srv
+MakePlan.srv
+#   MakePlanCostmap.srv
+    ChangeSolveTime.srv
 )
 
 generate_messages(
@@ -79,27 +69,24 @@ generate_messages(
 )
 
 catkin_package(
-	INCLUDE_DIRS include
-	LIBRARIES 
-		rrt_planners
-		rrt_planners_ros
+    INCLUDE_DIRS include
+    LIBRARIES
+        rrt_planners
+        rrt_planners_ros
     CATKIN_DEPENDS
         angles
         cmake_modules
-		geometry_msgs
-  		nav_msgs
-		#pcl_conversions
-		#pcl_ros
+        geometry_msgs
+        nav_msgs
         roscpp
-		rosconsole
+        rosconsole
         tf
-  		std_msgs
-  		visualization_msgs
-  		#upo_msgs
-		navigation_features_3d
-		#gmm_sampling
-		#dynamic_reconfigure
-		message_runtime
+        tf2_ros
+        std_msgs
+        visualization_msgs
+        navigation_features_3d
+        #dynamic_reconfigure
+        message_runtime
 	#DEPENDS system_lib
 )
 
@@ -128,7 +115,6 @@ target_link_libraries(rrt_planners
     ${catkin_LIBRARIES}
     ${Boost_LIBRARIES}
     ${Eigen_LIBRARIES}
-	flann
     )
 
 
@@ -145,15 +131,11 @@ add_dependencies(rrt_planners_ros upo_msgs_gencpp)
 add_dependencies(rrt_planners_ros geometry_msgs_gencpp)
 add_dependencies(rrt_planners_ros nav_msgs_gencpp)
 add_dependencies(rrt_planners_ros navigation_features_3d_gencpp)
-#add_dependencies(upo_rrt_planners_ros gmm_sampling_gencpp)
 
 target_link_libraries(rrt_planners_ros
     ${catkin_LIBRARIES}
     ${Boost_LIBRARIES}
     ${Eigen_LIBRARIES}
-	#${PCL_LIBRARIES}
-	nav_features3d
-	#gmm_sampling
 	rrt_planners
     )
 
@@ -166,7 +148,6 @@ add_executable(rrt_ros_wrapper_node
 )
 
 add_dependencies(rrt_ros_wrapper_node rrt_planners_gencpp)
-#add_dependencies(rrt_ros_wrapper_node upo_msgs_gencpp)
 add_dependencies(rrt_ros_wrapper_node geometry_msgs_gencpp)
 add_dependencies(rrt_ros_wrapper_node nav_msgs_gencpp)
 
@@ -174,76 +155,8 @@ target_link_libraries(rrt_ros_wrapper_node
     ${catkin_LIBRARIES}
     ${Boost_LIBRARIES}
     ${Eigen_LIBRARIES}
-	rrt_planners
+    rrt_planners
 )
-
-
-# upo_rrt_planners2 (ROS wrapper with use an external costmap)
-#add_executable(rrt_ros_wrapper2_node
-#	src/ros/ValidityChecker2.cpp
-#	src/ros/RRT_ros_wrapper2.cpp
-#	src/ros/ros_wrapper2_node.cpp
-#)
-
-#add_dependencies(rrt_ros_wrapper2_node upo_rrt_planners_gencpp)
-#add_dependencies(rrt_ros_wrapper2_node upo_msgs_gencpp)
-#add_dependencies(rrt_ros_wrapper2_node geometry_msgs_gencpp)
-#add_dependencies(rrt_ros_wrapper2_node nav_msgs_gencpp)
-
-#target_link_libraries(rrt_ros_wrapper2_node
-#    ${catkin_LIBRARIES}
-#    ${Boost_LIBRARIES}
-#    ${Eigen_LIBRARIES}
-#	upo_rrt_planners
-#)
-
-
-
-# upo_rrt_planners3_ros (ROS wrapper)
-#add_library(upo_rrt_planners3_ros
-#	src/ros/capture.cpp
-#	src/ros/ValidityChecker3.cpp
-#	src/ros/RRT_ros_wrapper3.cpp
-#)
-
-#add_dependencies(upo_rrt_planners3_ros upo_rrt_planners_gencpp)
-#add_dependencies(upo_rrt_planners3_ros upo_rrt_planners3_ros_gencpp)
-#add_dependencies(upo_rrt_planners3_ros upo_msgs_gencpp)
-#add_dependencies(upo_rrt_planners3_ros geometry_msgs_gencpp)
-#add_dependencies(upo_rrt_planners3_ros nav_msgs_gencpp)
-
-#target_link_libraries(upo_rrt_planners3_ros
-#    ${catkin_LIBRARIES}
-#    ${Boost_LIBRARIES}
-#    ${Eigen_LIBRARIES}
-#	upo_rrt_planners
-#    )
-
-
-
-
-# upo_rrt_planners2 (ROS wrapper with use an external costmap)
-#add_executable(rrt_ros_wrapper3_node
-#	src/ros/capture.cpp
-#	src/ros/ValidityChecker3.cpp
-#	src/ros/RRT_ros_wrapper3.cpp
-#	src/ros/ros_wrapper3_node.cpp
-#)
-
-#add_dependencies(rrt_ros_wrapper3_node upo_rrt_planners_gencpp)
-#add_dependencies(rrt_ros_wrapper3_node upo_msgs_gencpp)
-#add_dependencies(rrt_ros_wrapper3_node geometry_msgs_gencpp)
-#add_dependencies(rrt_ros_wrapper3_node nav_msgs_gencpp)
-
-#target_link_libraries(rrt_ros_wrapper3_node
-#    ${catkin_LIBRARIES}
-#    ${Boost_LIBRARIES}
-#    ${Eigen_LIBRARIES}
-#	upo_rrt_planners
-#    )
-
-
-
 
 
 
@@ -257,8 +170,7 @@ install(DIRECTORY launch
 install(
     TARGETS
         rrt_planners
-		rrt_planners_ros
-		#upo_rrt_planners3_ros
+        rrt_planners_ros
     ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

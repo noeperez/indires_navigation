@@ -7,7 +7,7 @@
   <!-- One maintainer tag required, multiple allowed, one person per tag --> 
   <!-- Example:  -->
   <!-- <maintainer email="jane.doe@example.com">Jane Doe</maintainer> -->
-  <maintainer email="noe.perez@uc3m.es">Noé Pérez</maintainer>
+  <maintainer email="noeperez@upo.es">Noé Pérez</maintainer>
 
 
   <!-- One license tag required, multiple allowed, one license per tag -->
@@ -51,6 +51,7 @@
   <build_depend>std_msgs</build_depend>
   <build_depend>angles</build_depend>
   <build_depend>tf</build_depend>
+  <build_depend>tf2_ros</build_depend>
   <!--build_depend>upo_navigation</build_depend-->
   <build_depend>adapted_move_base</build_depend>
   <build_depend>common_rosdeps</build_depend>
@@ -69,6 +70,7 @@
   <run_depend>std_msgs</run_depend>
   <run_depend>angles</run_depend>
   <run_depend>tf</run_depend>
+  <run_depend>tf2_ros</run_depend>
   <!--run_depend>upo_navigation</run_depend-->
   <run_depend>adapted_move_base</run_depend>
   <!--run_depend>yaml-cpp</run_depend-->

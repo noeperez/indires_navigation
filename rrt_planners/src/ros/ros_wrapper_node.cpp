@@ -3,7 +3,10 @@
 
 int main(int argc, char** argv){
   ros::init(argc, argv, "ros_wrapper_node");
-  tf::TransformListener tf(ros::Duration(10));
+
+  tf2_ros::Buffer tf;
+  tf2_ros::TransformListener tfListener(tf);
+  //tf::TransformListener tf(ros::Duration(10));
   
   ROS_INFO("STARTING RRT PLANNERS...");
   

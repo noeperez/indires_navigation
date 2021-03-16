@@ -5,8 +5,8 @@
 #include <rrt_planners/State.h>
 #include <rrt_planners/Node.h>
 #include <rrt_planners/StateChecker.h>
-#include <rrt_planners/NearestNeighborsFLANN.h>
-#include <rrt_planners/NearestNeighbors.h>
+//#include <rrt_planners/NearestNeighborsFLANN.h>
+//#include <rrt_planners/NearestNeighbors.h>
 #include <rrt_planners/planners/Planner.h>
 
 #include <vector>
@@ -18,28 +18,28 @@
 
 namespace RRT
 {
-	class SimpleRRT : public RRT::Planner
-	{
-		public:
-			SimpleRRT();
-			~SimpleRRT();
+class SimpleRRT : public RRT::Planner
+{
+public:
+  SimpleRRT();
+  ~SimpleRRT();
 
-			State* steer(State* fromState, State* toState, std::vector<State>& istates);
+  State* steer(State* fromState, State* toState, std::vector<State>& istates);
 
-			std::vector<RRT::Node> solve(float secs);
+  std::vector<RRT::Node> solve(float secs);
 
-			//void setRobotPosition();
-
-
-			void setMaxRange(float range) {
-				steering_->setMaxRange(range);
-			}
+  // void setRobotPosition();
 
 
-		//private:
-		
-			//float 				maxRange_; //max distance to insert a new node
+  void setMaxRange(float range)
+  {
+    steering_->setMaxRange(range);
+  }
 
-	};
+
+  // private:
+
+  // float 				maxRange_; //max distance to insert a new node
+};
 }
 #endif

@@ -62,6 +62,8 @@
 #include <nav_msgs/GetPlan.h>
 #include <tf/transform_datatypes.h>
 #include <tf/transform_listener.h>
+#include <tf2_ros/transform_listener.h>
+#include <tf2_ros/buffer.h>
 
 #include <pluginlib/class_loader.hpp>
 #include <std_srvs/Empty.h>
@@ -97,8 +99,8 @@ namespace move_base {
        * @param name The name of the action
        * @param tf A reference to a TransformListener
        */
-      //MoveBase(tf2_ros::Buffer& tf); //ROS melodic
-      MoveBase(tf::TransformListener* tf);
+      MoveBase(tf2_ros::Buffer& tf); //ROS melodic
+      //MoveBase(tf::TransformListener* tf);
 
       /**
        * @brief  Destructor - Cleans up
@@ -186,8 +188,8 @@ namespace move_base {
        */
       void wakePlanner(const ros::TimerEvent& event);
 
-      //tf2_ros::Buffer& tf_; //ROS melodic
-      tf::TransformListener* tf_;
+      tf2_ros::Buffer& tf_; //ROS melodic
+      //tf::TransformListener* tf_;
 
       MoveBaseActionServer* as_;
 

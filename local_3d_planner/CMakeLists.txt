@@ -5,25 +5,26 @@ project(local_3d_planner)
  add_compile_options(-std=c++11)
 
 find_package(catkin REQUIRED
-        COMPONENTS
-            cmake_modules
-            roscpp
-            tf
-            #message_generation
-            dynamic_reconfigure
-            nav_core
-            pcl_conversions
-            rostest
-            costmap_2d
-            pluginlib
-            angles
-			navigation_features_3d
-        )
+    COMPONENTS
+    cmake_modules
+    roscpp
+    tf
+    tf2_ros
+    #message_generation
+    dynamic_reconfigure
+    nav_core
+    pcl_conversions
+    rostest
+    costmap_2d
+    pluginlib
+    angles
+    navigation_features_3d
+)
 
 find_package(Boost REQUIRED
     COMPONENTS
-        thread
-        )
+    thread
+)
 
 find_package(Eigen REQUIRED)
 find_package(PCL 1.9.1 REQUIRED)
@@ -64,11 +65,12 @@ catkin_package(
         dynamic_reconfigure
         #message_generation
         tf
+        tf2_ros
         pluginlib
         costmap_2d
         nav_core
         angles
-		navigation_features_3d
+        navigation_features_3d
 )
 
 #uncomment for profiling

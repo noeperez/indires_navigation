@@ -2,7 +2,7 @@
 <launch>
 
 	<include file="$(find pcl_filters)/launch/pcl_filters.launch" >
-		<arg name="pointcloud" 			value="point_map" /> <!--point_map  /rtabmap/cloud_map-->
+		<arg name="pointcloud" 			value="rtabmap/cloud_map" /> <!--point_map  /rtabmap/cloud_map-->
 		<arg name="prefix" 				value="indires_rover" />
 	</include>
 

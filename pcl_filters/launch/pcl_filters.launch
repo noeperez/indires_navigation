@@ -1,7 +1,7 @@
 <!-- -->
 <launch>
 
-	<arg name="pointcloud" default="point_map" />
+	<arg name="pointcloud" default="point_map" /> <!--/rtabmap/cloud_map   point_map -->
 	<arg name="prefix" default="indires_rover" />
 	<arg name="robot_topic" default="/$(arg prefix)/odom_filtered" />
 	<arg name="sensor_frame" default="$(arg prefix)/front_rgbd_camera/depth_optical_frame" />

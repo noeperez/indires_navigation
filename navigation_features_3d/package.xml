@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
   <name>navigation_features_3d</name>
-  <version>0.0.0</version>
+  <version>1.0.0</version>
   <description>The navigation_features package</description>
 
   <maintainer email="noe.perez@uc3m.es">Noé Pérez</maintainer>
@@ -16,13 +16,13 @@
   <!-- Url tags are optional, but mutiple are allowed, one per tag -->
   <!-- Optional attribute type can be: website, bugtracker, or repository -->
   <!-- Example: -->
-  <url type="repository">https://github.com/robotics-upo</url>
+  <url type="repository">https://github.com/noeperez/indires_navigation</url>
 
 
   <!-- Author tags are optional, mutiple are allowed, one per tag -->
   <!-- Authors do not have to be maintianers, but could be -->
   <!-- Example: -->
-  <author email="noe.perez@uc3m.es">Noé Pérez</author>
+  <author email="noeperez@upo.es">Noé Pérez</author>
 
 
   <!-- The *_depend tags are used to specify dependencies -->
@@ -41,6 +41,7 @@
   <build_depend>rospy</build_depend>
   <build_depend>std_msgs</build_depend>
   <build_depend>tf</build_depend>
+  <build_depend>tf2_ros</build_depend>
   <build_depend>nav_msgs</build_depend>
   <build_depend>visualization_msgs</build_depend>
   <build_depend>message_generation</build_depend>
@@ -59,6 +60,7 @@
   <run_depend>rospy</run_depend>
   <run_depend>std_msgs</run_depend>
   <run_depend>tf</run_depend>
+  <run_depend>tf2_ros</run_depend>
   <run_depend>nav_msgs</run_depend>
   <run_depend>visualization_msgs</run_depend>
   <run_depend>message_runtime</run_depend>

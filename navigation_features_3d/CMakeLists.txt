@@ -21,6 +21,7 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
   tf
+  tf2_ros
   pcl_filters
   nav_msgs
   visualization_msgs
@@ -139,6 +140,7 @@ catkin_package(
 	rospy 
 	std_msgs 
 	tf 
+        tf2_ros
 	pcl_filters 
 	nav_msgs 
 	visualization_msgs
@@ -159,8 +161,8 @@ include_directories(
     include
     ${catkin_INCLUDE_DIRS}
     ${EIGEN_INCLUDE_DIRS}
-	${PCL_INCLUDE_DIRS}
-	#${OpenCV_INCLUDE_DIRS}
+    ${PCL_INCLUDE_DIRS}
+    #${OpenCV_INCLUDE_DIRS}
 )
 
 add_definitions(${EIGEN_DEFINITIONS})
@@ -186,7 +188,7 @@ add_definitions(${PCL_DEFINITIONS})
     ${PCL_LIBRARIES}
     ${Boost_LIBRARIES}
     ${Eigen_LIBRARIES}
-	#${OpenCV_LIBRARIES}
+    #${OpenCV_LIBRARIES}
 
  )
 
@@ -223,11 +225,11 @@ add_definitions(${PCL_DEFINITIONS})
 # )
 
 ## Mark executables and/or libraries for installation
-# install(TARGETS navigation_features navigation_features_node
-#   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-#   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-#   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-# )
+ install(TARGETS nav_features3d
+   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+ )
 
 ## Mark cpp header files for installation
 # install(DIRECTORY include/${PROJECT_NAME}/

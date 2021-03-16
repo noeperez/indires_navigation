@@ -54,8 +54,8 @@
 
 namespace move_base {
 
-  //MoveBase::MoveBase(tf2_ros::Buffer& tf) :
-  MoveBase::MoveBase(tf::TransformListener* tf) :
+  MoveBase::MoveBase(tf2_ros::Buffer& tf) :
+  //MoveBase::MoveBase(tf::TransformListener* tf) :
     tf_(tf),
     as_(NULL),
     planner_costmap_ros_(NULL), controller_costmap_ros_(NULL),
@@ -125,7 +125,7 @@ namespace move_base {
 
     //create the ros wrapper for the planner's costmap... and initializer a pointer we'll use with the underlying map
     if(use_global_costmap2d_) {
-		planner_costmap_ros_ = new costmap_2d::Costmap2DROS("global_costmap", *tf_);
+		planner_costmap_ros_ = new costmap_2d::Costmap2DROS("global_costmap", tf_);
 		planner_costmap_ros_->pause();
 	}
 	
@@ -140,14 +140,14 @@ namespace move_base {
 
     //create the ros wrapper for the controller's costmap... and initializer a pointer we'll use with the underlying map
     if(use_local_costmap2d_) {
-		controller_costmap_ros_ = new costmap_2d::Costmap2DROS("local_costmap", *tf_);
+		controller_costmap_ros_ = new costmap_2d::Costmap2DROS("local_costmap", tf_);
 		controller_costmap_ros_->pause();
 	}
     //create a local planner
     try {
       tc_ = blp_loader_.createInstance(local_planner);
       ROS_INFO("Created local_planner %s", local_planner.c_str());
-      tc_->initialize(blp_loader_.getName(local_planner), tf_, controller_costmap_ros_);
+      tc_->initialize(blp_loader_.getName(local_planner), &tf_, controller_costmap_ros_);
     } catch (const pluginlib::PluginlibException& ex) {
       ROS_FATAL("Failed to create the %s planner, are you sure it is properly registered and that the containing library is built? Exception: %s", local_planner.c_str(), ex.what());
       exit(1);
@@ -273,7 +273,7 @@ namespace move_base {
         latest_plan_->clear();
         controller_plan_->clear();
         resetState();
-        tc_->initialize(blp_loader_.getName(config.base_local_planner), tf_, controller_costmap_ros_);
+        tc_->initialize(blp_loader_.getName(config.base_local_planner), &tf_, controller_costmap_ros_);
       } catch (const pluginlib::PluginlibException& ex) {
         ROS_FATAL("Failed to create the %s planner, are you sure it is properly registered and that the \
                    containing library is built? Exception: %s", config.base_local_planner.c_str(), ex.what());
@@ -593,8 +593,8 @@ namespace move_base {
     goal_pose.header.stamp = ros::Time();
 
     try{
-      //tf_->transform(goal_pose_msg, global_pose, global_frame);
-      tf_->transformPose(global_frame, goal_pose_msg, global_pose);
+      tf_.transform(goal_pose_msg, global_pose, global_frame);
+      //tf_->transformPose(global_frame, goal_pose_msg, global_pose);
     }
     catch(tf2::TransformException& ex){
       ROS_WARN("Failed to transform the goal pose from %s into the %s frame: %s",
@@ -1175,7 +1175,7 @@ namespace move_base {
             }
 
             //initialize the recovery behavior with its name
-            behavior->initialize(behavior_list[i]["name"], tf_, planner_costmap_ros_, controller_costmap_ros_);
+            behavior->initialize(behavior_list[i]["name"], &tf_, planner_costmap_ros_, controller_costmap_ros_);
             recovery_behaviors_.push_back(behavior);
           }
           catch(pluginlib::PluginlibException& ex){
@@ -1211,21 +1211,21 @@ namespace move_base {
       //first, we'll load a recovery behavior to clear the costmap
       boost::shared_ptr<nav_core::RecoveryBehavior> cons_clear(recovery_loader_.createInstance("clear_costmap_recovery/ClearCostmapRecovery"));
       //std::shared_ptr<nav_core::RecoveryBehavior> cons_clear(recovery_loader_.createInstance("clear_costmap_recovery/ClearCostmapRecovery"));
-      cons_clear->initialize("conservative_reset", tf_, planner_costmap_ros_, controller_costmap_ros_);
+      cons_clear->initialize("conservative_reset", &tf_, planner_costmap_ros_, controller_costmap_ros_);
       recovery_behaviors_.push_back(cons_clear);
 
       //next, we'll load a recovery behavior to rotate in place
       boost::shared_ptr<nav_core::RecoveryBehavior> rotate(recovery_loader_.createInstance("rotate_recovery/RotateRecovery"));
       //std::shared_ptr<nav_core::RecoveryBehavior> rotate(recovery_loader_.createInstance("rotate_recovery/RotateRecovery"));
       if(clearing_rotation_allowed_){
-        rotate->initialize("rotate_recovery", tf_, planner_costmap_ros_, controller_costmap_ros_);
+        rotate->initialize("rotate_recovery", &tf_, planner_costmap_ros_, controller_costmap_ros_);
         recovery_behaviors_.push_back(rotate);
       }
 
       //next, we'll load a recovery behavior that will do an aggressive reset of the costmap
       boost::shared_ptr<nav_core::RecoveryBehavior> ags_clear(recovery_loader_.createInstance("clear_costmap_recovery/ClearCostmapRecovery"));
       //std::shared_ptr<nav_core::RecoveryBehavior> ags_clear(recovery_loader_.createInstance("clear_costmap_recovery/ClearCostmapRecovery"));
-      ags_clear->initialize("aggressive_reset", tf_, planner_costmap_ros_, controller_costmap_ros_);
+      ags_clear->initialize("aggressive_reset", &tf_, planner_costmap_ros_, controller_costmap_ros_);
       recovery_behaviors_.push_back(ags_clear);
 
       //we'll rotate in-place one more time
@@ -1275,11 +1275,11 @@ namespace move_base {
     try
     {
 		if(use_global_costmap2d_) {
-			//tf_->transform(robot_pose, global_pose, costmap->getGlobalFrameID()); 
-			tf_->transformPose(costmap->getGlobalFrameID(), robot_pose, global_pose);
+			tf_.transform(robot_pose, global_pose, costmap->getGlobalFrameID()); 
+			//tf_->transformPose(costmap->getGlobalFrameID(), robot_pose, global_pose);
 		} else {
-			//tf_->transform(robot_pose, global_pose, global_frame_);
-			tf_->transformPose(global_frame_, robot_pose, global_pose);
+			tf_.transform(robot_pose, global_pose, global_frame_);
+			//tf_->transformPose(global_frame_, robot_pose, global_pose);
 		}
     }
     catch (tf2::LookupException& ex)

@@ -30,9 +30,6 @@ A local controller in 3D to follow a given global path. It follows the ROS BaseL
 * *adapted_move_base*:   
 This is a modified version of the original move_base package of ROS Kinectic distro. This modification allows to use other global or local planners  (following the ROS move_base premises) that do not use the standard ROS Costamps for planning. Two new boolean parameters are added to indicate the use of the global and/or local costmap (use_global_costmap2d and use_local_costmap2d).
 
-* *costmap_2d*:   
-The regular costmap_2d package of ROS has a dependency on PCL. Therefore, as we are using here the version 1.9.1 of the PCL library, we need to include this package with the aim of keeping everything working properly. Only the CMakeLists.txt has been modified to take the PCL version 1.9.1 in comparison with the original ROS package (Kinetic distro). 
-
 * *indires_macro_actions*:
 A set of navigation macro-actions have been implemented by using the *actionlib* library of ROS. This way, the navigation system is employed to perform different actions as reaching an indicated goal, perform an autonomous exploration, or teleoperate the robot.
 
@@ -77,9 +74,20 @@ After configuring your system, your simulation (or real robot) with the mapping 
 * Finite State Machine that controls the macro-actions and a simple command-line program for testing:
 > roslaunch control_state_machine control_tester.launch 
 
+## Version
 
+This package has been tested under ROS KINETIC and MELODIC distributions.
 
-This package has been tested under ROS KINETIC distribution. Some issues in ROS MELODIC can arise. The package is a **work in progress** used in research prototyping. Pull requests and/or issues are highly encouraged.
+Last modifications:
+
+* Removing dependency on FLANN library for NearestNeiborghs search. It has been replaced by a custom kdtree.
+
+* Update to ROS Melodic distro:
+
+	- Dependency on dedicated costmap_2d package has been removed.
+	- Adapted_move_base has been updated to be used in Melodic.
+	- Tf1 replaced by tf2.
+
 
 [1] Karaman, S., & Frazzoli, E. (2011). Sampling-based algorithms for optimal motion planning. The International Journal of Robotics Research, 30(7), 846–894. https://doi.org/10.1177/0278364911406761
 

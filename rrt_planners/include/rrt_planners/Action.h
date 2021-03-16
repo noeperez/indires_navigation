@@ -3,33 +3,31 @@
 
 //#include <ros/ros.h>
 
-namespace RRT {
+namespace RRT
+{
+class Action
+{
+public:
+  Action();
+  Action(float vx, float vy, float vth, unsigned int steps);
+  ~Action();
 
-	class Action
-	{
-		public:
-			Action();
-			Action(float vx, float vy, float vth, unsigned int steps); 
-		    ~Action();
+  void getAction(float &vx, float &vy, float &vth, unsigned int &steps);
+  float getVx();
+  float getVy();
+  float getVth();
+  unsigned int getAction();
+  unsigned int getSteps();
 
-			void getAction(float &vx, float &vy, float &vth, unsigned int &steps);
-			float getVx();
-			float getVy();
-			float getVth();
-			unsigned int getAction();
-			unsigned int getSteps();
+private:
+  float vx_;
 
-		private:
-		
-			float 		vx_;
+  float vy_;
 
-			float 		vy_;
+  float vth_;
 
-			float 		vth_;
-
-			// The number of steps the control is applied for
-			unsigned int 	steps_;
-
-	};
+  // The number of steps the control is applied for
+  unsigned int steps_;
+};
 }
 #endif
