@@ -13,8 +13,9 @@
 #include <visualization_msgs/MarkerArray.h>
 #include <geometry_msgs/PointStamped.h>
 #include <geometry_msgs/Pose2D.h>
-#include <tf/transform_datatypes.h>
+//#include <tf/transform_datatypes.h>
 #include <tf2_ros/transform_listener.h>
+#include <tf/transform_listener.h>
 #include <tf2_ros/buffer.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <std_msgs/Float32.h>
@@ -109,16 +110,16 @@ public:
 
   Features3D();
 
-  Features3D(std::string name, tf2_ros::Buffer* tf, float size_x, float size_y, float size_z);
+  Features3D(string name, tf2_ros::Buffer* tf, float size_x, float size_y, float size_z);
 
 
 
-  Features3D(std::string name, tf2_ros::Buffer* tf,
+  Features3D(string name, tf2_ros::Buffer* tf,
              vector<geometry_msgs::Point>* footprint, float size_x, float size_y, float size_z);
 
   ~Features3D();
 
-  void setParams(std::string name);
+  void setParams(string name);
 
   bool poseValid(geometry_msgs::PoseStamped* s);
   // bool poseValid2(geometry_msgs::PoseStamped* s);
@@ -128,14 +129,14 @@ public:
 
   float getCost(geometry_msgs::PoseStamped* s);
 
-  std::vector<float> getFeatures(geometry_msgs::PoseStamped* s);
+  vector<float> getFeatures(geometry_msgs::PoseStamped* s);
 
 
-  std::vector<std::vector<int> > clusterize_leaves(std::vector<geometry_msgs::Point>* points,
+  vector<vector<int> > clusterize_leaves(vector<geometry_msgs::Point>* points,
                                                    float radius);
-  int evaluate_leaves(std::vector<geometry_msgs::Point>* points,
-                      std::vector<float>* pcosts, std::string frame, float radius);
-  float evaluate_leaf(geometry_msgs::Point* p, float rrt_cost, std::string frame,
+  int evaluate_leaves(vector<geometry_msgs::Point>* points,
+                      vector<float>* pcosts, string frame, float radius);
+  float evaluate_leaf(geometry_msgs::Point* p, float rrt_cost, string frame,
                       float radius, float& npoints);
   // float evaluate_leaf_nfe_bfe(geometry_msgs::Point* p, float rrt_cost, std::string
   // frame, float radius, float &npoints);
@@ -169,23 +170,23 @@ public:
 
 
   geometry_msgs::PoseStamped transformPoseTo(geometry_msgs::PoseStamped pose_in,
-                                             std::string frame_out, bool usetime);
+                                             string frame_out, bool usetime);
 
   bool isQuaternionValid(const geometry_msgs::Quaternion q);
 
   // pcl::normAngle(float alpha) //norm angle [-PI, PI]
   float normalizeAngle(float val, float min, float max);
 
-  void setWeights(std::vector<float> we);
+  void setWeights(vector<float> we);
 
   void setGoal(geometry_msgs::PoseStamped g);
 
-  inline std::string getRobotBaseFrame()
+  inline string getRobotBaseFrame()
   {
     return robot_base_frame_;
   };
 
-  inline std::string getRobotOdomFrame()
+  inline string getRobotOdomFrame()
   {
     return robot_odom_frame_;
   };
@@ -212,28 +213,29 @@ public:
 
 
 private:
-  //tf::TransformListener* tf_listener_;
+  //tf::TransformListener* tf1_listener_;
+  tf2_ros::TransformListener* tf_listener_;
   tf2_ros::Buffer* tf_;
 
-  std::string name_;
+  string name_;
 
   ros::Subscriber cloud_sub_;
   ros::ServiceClient exp_client_;
-  std::string exp_pc_service_name_;
+  string exp_pc_service_name_;
   // pcl::KdTreeFLANN<pcl::PointXYZ>*	kdtree_exp_;
   pcl::PointCloud<pcl::PointXYZ>::Ptr exp_cloud_;
   pcl::VoxelGridCovariance<pcl::PointXYZ>* vgc_;
   float cell_size_;
-  std::vector<pcl::PointXYZ> wall_points_;
+  vector<pcl::PointXYZ> wall_points_;
   ros::Publisher wall_pub_;
-  std::vector<geometry_msgs::Point> frontier_points_;
+  vector<geometry_msgs::Point> frontier_points_;
   ros::Publisher frontier_pub_;
   ros::Publisher visited_pub_;
   sensor_msgs::PointCloud2 cloud_;
   pcl::PointCloud<pcl::PointXYZ> pcl_cloud_;
   pcl::PointCloud<pcl::PointXYZ> wall_cloud_;
   ros::Publisher pc_wall_pub_;
-  std::vector<float> num_points_;
+  vector<float> num_points_;
   float num_points_saturation_;
   // mutex 								cloudMutex_;
 
@@ -276,9 +278,9 @@ private:
 
   vector<geometry_msgs::Point>* myfootprint_;
 
-  std::string robot_base_frame_;
-  std::string robot_odom_frame_;
-  std::string robot_odom_topic_;
+  string robot_base_frame_;
+  string robot_odom_frame_;
+  string robot_odom_topic_;
 
 
   ros::Subscriber pose_sub_;

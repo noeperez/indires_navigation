@@ -18,7 +18,6 @@
     <build_depend>nav_msgs</build_depend>
     <build_depend>rosconsole</build_depend>
     <build_depend>roscpp</build_depend>
-    <build_depend>tf</build_depend>
     <build_depend>tf2_ros</build_depend>
     <build_depend>rospy</build_depend>
     <build_depend>pluginlib</build_depend>
@@ -30,7 +29,7 @@
     <build_depend>nav_core</build_depend>
     <build_depend>pcl_conversions</build_depend>
     <build_depend>pcl_ros</build_depend>
-    <build_depend>eigen</build_depend>
+    <build_depend>eigen3</build_depend>
     <build_depend>dynamic_reconfigure</build_depend>
 	<build_depend>navigation_features_3d</build_depend>
     <!--<build_depend>message_generation</build_depend>-->
@@ -50,7 +49,7 @@
     <run_depend>geometry_msgs</run_depend>
     <run_depend>nav_core</run_depend>
     <run_depend>pcl_ros</run_depend>
-    <run_depend>eigen</run_depend>
+    <run_depend>eigen3</run_depend>
     <run_depend>dynamic_reconfigure</run_depend>
 	<run_depend>navigation_features_3d</run_depend>
     <!--<run_depend>message_generation</run_depend>-->

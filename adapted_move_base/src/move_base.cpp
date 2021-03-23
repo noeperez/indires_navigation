@@ -593,7 +593,7 @@ namespace move_base {
     goal_pose.header.stamp = ros::Time();
 
     try{
-      tf_.transform(goal_pose_msg, global_pose, global_frame);
+      global_pose = tf_.transform(goal_pose_msg, global_frame);
       //tf_->transformPose(global_frame, goal_pose_msg, global_pose);
     }
     catch(tf2::TransformException& ex){
@@ -1275,10 +1275,10 @@ namespace move_base {
     try
     {
 		if(use_global_costmap2d_) {
-			tf_.transform(robot_pose, global_pose, costmap->getGlobalFrameID()); 
+			global_pose = tf_.transform(robot_pose, costmap->getGlobalFrameID()); 
 			//tf_->transformPose(costmap->getGlobalFrameID(), robot_pose, global_pose);
 		} else {
-			tf_.transform(robot_pose, global_pose, global_frame_);
+			global_pose = tf_.transform(robot_pose, global_frame_);
 			//tf_->transformPose(global_frame_, robot_pose, global_pose);
 		}
     }

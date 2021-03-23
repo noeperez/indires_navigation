@@ -2,8 +2,8 @@ cmake_minimum_required(VERSION 2.8.3)
 project(rrt_planners)
 
 ## Add support for C++11, supported in ROS Kinetic and newer
-add_definitions(-std=c++11)
-add_compile_options(-std=c++11 -fext-numeric-literals)
+#add_definitions(-std=c++11)
+#add_compile_options(-std=c++11 -fext-numeric-literals)
 
 set (CMAKE_BUILD_TYPE Debug)
 find_package(catkin REQUIRED
@@ -14,7 +14,6 @@ find_package(catkin REQUIRED
         nav_msgs
         roscpp
         rosconsole
-        tf
         tf2_ros
         std_msgs
         visualization_msgs
@@ -35,24 +34,7 @@ include_directories(
 )
 
 add_definitions(${EIGEN_DEFINITIONS})
-#link_directories(${PCL_LIBRARY_DIRS})
-#add_definitions(${PCL_DEFINITIONS})
 
-
-# dynamic reconfigure
-#generate_dynamic_reconfigure_options(
-#    cfg/RRTRosWrapper.cfg
-#)
-
-
-## Generate messages in the 'msg' folder
-#add_message_files(
-#    DIRECTORY msg
-#    FILES
-#    Position2DInt.msg
-#	PointCost.msg
-#	FeaturesWeights.msg
-# )
 
 
 add_service_files(
@@ -80,7 +62,6 @@ catkin_package(
         nav_msgs
         roscpp
         rosconsole
-        tf
         tf2_ros
         std_msgs
         visualization_msgs

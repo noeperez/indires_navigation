@@ -1061,7 +1061,7 @@ geometry_msgs::PoseStamped Indires_macro_actions::transformPoseTo(geometry_msgs:
   geometry_msgs::PoseStamped pose_out;
   try
   {
-    tf_->transform(pose_out, in, frame_out.c_str());
+    pose_out = tf_->transform(in, frame_out.c_str());
   }
   catch (tf2::TransformException ex)
   {

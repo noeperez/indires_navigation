@@ -204,7 +204,7 @@ bool Local3DPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel)
   // tf::poseStampedMsgToTF(ro, rg);
   if (odom.header.frame_id != global_frame_)
   {
-    tf_->transform(global_pose, ro, global_frame_);
+    global_pose = tf_->transform(ro, global_frame_);
   }
   else
     global_pose = ro;

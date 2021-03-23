@@ -27,7 +27,7 @@ CropBoxFilter:
 
 
 VoxelGridFilter:
-  enable: true
+  enable: false
   leaf_size: 0.04
   min_point_per_voxel: 3
 

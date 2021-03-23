@@ -76,7 +76,7 @@ After configuring your system, your simulation (or real robot) with the mapping 
 
 ## Version
 
-This package has been tested under ROS KINETIC and MELODIC distributions.
+This package has been tested under ROS MELODIC distribution.
 
 Last modifications:
 

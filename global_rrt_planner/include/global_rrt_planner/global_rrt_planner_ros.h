@@ -78,7 +78,8 @@ public:
 
 
 private:
-  tf2_ros::Buffer* tf_;
+  tf2_ros::Buffer* tf_ = nullptr;
+  tf2_ros::TransformListener* tf_listener_;
   RRT_ros::RRT_ros_wrapper* rrt_wrapper_;
 
   float default_tolerance_;

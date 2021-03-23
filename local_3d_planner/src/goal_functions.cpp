@@ -157,7 +157,7 @@ bool transformGlobalPlan(const tf2_ros::Buffer& tf,
     {
       // let's get the pose of the robot in the frame of the plan
       // tf.transformPose(plan_pose.header.frame_id, global_pose, robot_pose);
-      tf.transform(robot_pose, global_pose, plan_pose.header.frame_id);
+      robot_pose = tf.transform(global_pose, plan_pose.header.frame_id);
     }
 
     unsigned int i = 0;

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(adapted_move_base)
 
-add_compile_options(-std=c++11)
+#add_compile_options(-std=c++11)
 #add_definitions(-std=c++11)
 
 find_package(catkin REQUIRED
@@ -69,17 +69,4 @@ add_dependencies(adapted_move_base_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${ca
 target_link_libraries(adapted_move_base_node adapted_move_base)
 set_target_properties(adapted_move_base_node PROPERTIES OUTPUT_NAME adapted_move_base_node)
 
-#install(
-#    TARGETS
-#        adapted_move_base
-#        adapted_move_base_node
-#    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-#    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-#    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-#)
 
-## Mark cpp header files for installation
-#install(DIRECTORY include/${PROJECT_NAME}/
-#  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-#  FILES_MATCHING PATTERN "*.h"
-#)

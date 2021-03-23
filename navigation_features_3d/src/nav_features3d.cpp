@@ -8,14 +8,14 @@
 #include <string>
 
 
-using namespace std;
+//using namespace std;
 
 
 nav3d::Features3D::Features3D()
 {
   tf_ = new tf2_ros::Buffer();
-  tf2_ros::TransformListener tfListener(*tf_);
-  // tf_ = new tf::TransformListener(ros::Duration(10));
+  tf_listener_ = new tf2_ros::TransformListener(*tf_);
+  //tf1_listener_ = new tf::TransformListener(ros::Duration(10));
   size_x_ = 5.0 * 2.0;  // m
   size_y_ = 5.0 * 2.0;  // m
   size_z_ = 5.0 * 2.0;  // m
@@ -2027,7 +2027,8 @@ geometry_msgs::PoseStamped nav3d::Features3D::transformPoseTo(geometry_msgs::Pos
   }
   try
   {
-    tf_->transform(pose_out, in, frame_out.c_str());
+    //tf_->transform(pose_out, in, frame_out.c_str());
+    pose_out = tf_->transform(in, frame_out.c_str());
   }
   catch (tf2::TransformException ex)
   {

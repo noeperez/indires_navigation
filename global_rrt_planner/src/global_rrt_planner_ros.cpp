@@ -46,8 +46,11 @@ void GlobalRRTPlanner::initialize(std::string name, std::string frame_id)
 {
   if (!initialized_)
   {
-    tf_ = new tf2_ros::Buffer();
-    tf2_ros::TransformListener tfListener(*tf_);
+    if(tf_ == nullptr) 
+    {
+    	tf_ = new tf2_ros::Buffer();
+    	tf_listener_ = new tf2_ros::TransformListener(*tf_);
+    }
     sleep(5.0);
     ros::NodeHandle private_nh("~/" + name);
 

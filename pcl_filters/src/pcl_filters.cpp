@@ -5,16 +5,6 @@
 #include <time.h>
 
 
-//PCL
-/*
-//This solves the problem of compiling pcl search with C++11
-#include <pcl/search/impl/search.hpp>
-#ifndef PCL_NO_PRECOMPILE 
-#include <pcl/impl/instantiate.hpp> 
-#include <pcl/point_types.h> 
-PCL_INSTANTIATE(Search, PCL_POINT_TYPES) 
-#endif // PCL_NO_PRECOMPILE
-*/
 #include <pcl/io/pcd_io.h>
 #include <pcl/conversions.h>
 #include <pcl_conversions/pcl_conversions.h>
@@ -43,7 +33,11 @@ PCL_INSTANTIATE(Search, PCL_POINT_TYPES)
 #include <sensor_msgs/PointCloud2.h>
 #include <nav_msgs/Odometry.h>
 #include <geometry_msgs/PoseStamped.h>
-#include <tf/transform_listener.h>
+#include <tf/transform_datatypes.h>
+//#include <tf/transform_listener.h>
+#include <tf2_ros/transform_listener.h>
+#include <tf2_ros/buffer.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <pcl_ros/transforms.h>
 //ROS service
 #include "pcl_filters/GetFilteredPC.h"
@@ -110,8 +104,9 @@ ros::Publisher arrow_pub;
 ros::ServiceServer service;
 ros::ServiceServer change_size_service;
 
-tf::TransformListener *listener;
-
+//tf::TransformListener *listener;
+tf2_ros::Buffer* tf_buffer;
+tf2_ros::TransformListener* tf_listener;
 
 
 
@@ -166,10 +161,14 @@ bool isQuaternionValid(const geometry_msgs::Quaternion q){
 geometry_msgs::PoseStamped transformPoseTo(geometry_msgs::PoseStamped pose_in, std::string frame_out, bool usetime)
 {
 	geometry_msgs::PoseStamped in = pose_in;
+	if(pose_in.header.frame_id == frame_out)
+		return in;
+		
 	if(!usetime)
 		in.header.stamp = ros::Time(); //ros::Time::now(); //ros::Time();
 		
 	geometry_msgs::PoseStamped pose_out;
+
 	
 	geometry_msgs::Quaternion q = in.pose.orientation;
 	if(!isQuaternionValid(q))
@@ -178,8 +177,8 @@ geometry_msgs::PoseStamped transformPoseTo(geometry_msgs::PoseStamped pose_in, s
 		in.pose.orientation = tf::createQuaternionMsgFromYaw(0.0);
 	}
 	try {
-		listener->transformPose(frame_out.c_str(), in, pose_out);
-	}catch (tf::TransformException ex){
+        	pose_out = tf_buffer->transform(in, frame_out);
+    	}catch (tf2::TransformException ex){
 		ROS_WARN("pcl_filters. TransformException in method transformPoseTo. TargetFrame: %s, source_frame: %s. message error: %s", frame_out.c_str(), in.header.frame_id.c_str(), ex.what());
 	}
 	//printf("Tranform pose. frame_in: %s, x:%.2f, y:%.2f, frame_out: %s, x:%.2f, y:%.2f\n", in.header.frame_id.c_str(), in.pose.position.x, in.pose.position.y, frame_out.c_str(), pose_out.pose.position.x, pose_out.pose.position.y);
@@ -201,7 +200,7 @@ pcl::PointCloud<pcl::PointXYZ> removeWallsAndCeiling(pcl::PointCloud<pcl::PointX
 	filtered.sensor_origin_ = cloud->sensor_origin_;
 	filtered.sensor_orientation_ = cloud->sensor_orientation_;
 
-	const std::map< size_t, pcl::VoxelGridCovariance<pcl::PointXYZ>::Leaf >* leaves = &(vgc->getLeaves());
+	const std::map< size_t, pcl::VoxelGridCovariance<pcl::PointXYZ>::Leaf > leaves = vgc->getLeaves();
 
 	if(!cloud->isOrganized()) //The height value must be different than 1 for a dataset to be organized
 	{
@@ -210,34 +209,28 @@ pcl::PointCloud<pcl::PointXYZ> removeWallsAndCeiling(pcl::PointCloud<pcl::PointX
 		//std::vector<int> indices2;
 
 		int ind=0;
-		for(const auto& it : *leaves) //const 
+		for(const auto& it : leaves) //const 
 		{
-			const pcl::VoxelGridCovariance<pcl::PointXYZ>::Leaf *l = &(it.second);
+			const pcl::VoxelGridCovariance<pcl::PointXYZ>::Leaf l = it.second;
 
-			Eigen::Vector3d mean = l->getMean();
-			Eigen::Matrix3d evecs = l->getEvecs();
-			Eigen::Vector3d evals = l->getEvals();
+			Eigen::Vector3d mean = l.getMean();
+			Eigen::Matrix3d evecs = l.getEvecs();
+			Eigen::Vector3d evals = l.getEvals();
 			
-			/*int npoints = l->getPointCount();
-			/*int npoints = l->getPointCount();
-			if(npoints < 5)
-			{
-				//printf("REMOVE WALLS. POINTS IN LEAF LESS THAN 5!!!\n");
-				continue;
-			}*/
+		
+			Eigen::Quaternion<double> q(evecs);
 
+			auto euler = q.toRotationMatrix().eulerAngles(0, 1, 2); 
+			double yaw = euler[0]; 
+			double pitch = euler[1]; 
+			double roll = euler[2];
+			
+			
+			
 			pcl::PointXYZ p;
 			p.x = mean[0];
 			p.y = mean[1];
 			p.z = mean[2];
-		
-		
-			Eigen::Quaternion<double> q(evecs);
-
-			auto euler = q.toRotationMatrix().eulerAngles(0, 1, 2); //0->yaw, 1->pitch, 2->roll
-			double yaw = euler[0]; 
-			double pitch = euler[1]; 
-			double roll = euler[2];
 
 
 			//Identify the lowest eigenvalue
@@ -439,10 +432,12 @@ This will directly modify cloud_in instead of creating a copy of the cloud
 
 sensor_msgs::PointCloud2 applyFilters()
 {
+	printf("pcl_filters. poitcloud map received! Applying filters...\n");
 	//Transform the coordinates of the pointcloud
 	sensor_msgs::PointCloud2 local;
 	pc_mutex.lock();
-	pcl_ros::transformPointCloud(odom_frame, pc, local, *listener);
+	pc.header.stamp = ros::Time(); //Noe test
+	pcl_ros::transformPointCloud(odom_frame, pc, local, *tf_buffer);
 	pc_mutex.unlock();
 
 	//pc_frame = msg->header.frame_id;
@@ -583,7 +578,7 @@ sensor_msgs::PointCloud2 applyFilters()
 
 	//Transform the coordinates of the pointcloud
 	//sensor_msgs::PointCloud2 local;
-	//pcl_ros::transformPointCloud("/indires_rover/base_link", pc_out, local, *listener);
+	//pcl_ros::transformPointCloud("/indires_rover/base_link", pc_out, local, *tf_buffer);
 
 	//pc_pub.publish(pc_out);
 	//pc_pub.publish(local);
@@ -677,7 +672,9 @@ int main(int argc, char **argv)
     ros::NodeHandle n;
 	ros::NodeHandle nh("~");
 
-	listener = new tf::TransformListener(ros::Duration(10));
+    //listener = new tf::TransformListener(ros::Duration(10));
+    tf_buffer = new tf2_ros::Buffer();
+    tf_listener = new tf2_ros::TransformListener(*tf_buffer);
 
 	std::string pointcloud_topic = "indires_rover/front_rgbd_camera/front_rgbd_camera/depth/points";
 	//camera_tf = "indires_rover/front_rgbd_camera/depth_frame";
