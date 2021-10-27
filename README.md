@@ -1,4 +1,7 @@
 # indires_navigation
+
+THIS PACKAGE IS NOT LONGER MAINTAINED!
+
 ROS metapackage for ground robot 3D navigation and exploration developed for the European Project INDIRES (http://indires.eu/).
 Further details can be found in:
 
